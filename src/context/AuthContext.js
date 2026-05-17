@@ -1,0 +1,105 @@
+/**
+ * Contexto global de autenticación.
+ * Restaura la sesión desde localStorage al iniciar; AppNavigator
+ * reacciona a isAuthenticated e isInitializing.
+ */
+
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { authService } from '../services/authService';
+import { storageService, STORAGE_KEYS } from '../services/storageService';
+
+const AuthContext = createContext(null);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth debe usarse dentro de <AuthProvider>');
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const raw = await storageService.getItem(STORAGE_KEYS.SESSION);
+        if (raw) {
+          const { token: savedToken, user: savedUser } = JSON.parse(raw);
+          setToken(savedToken);
+          setUser(savedUser);
+        }
+      } catch {
+        await storageService.removeItem(STORAGE_KEYS.SESSION);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    restoreSession();
+  }, []);
+
+  const login = async (email, password) => {
+    setIsLoading(true);
+    try {
+      const response = await authService.login(email, password);
+      setToken(response.token);
+      setUser(response.user);
+      await storageService.setItem(
+        STORAGE_KEYS.SESSION,
+        JSON.stringify({ token: response.token, user: response.user })
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (userData) => {
+    setIsLoading(true);
+    try {
+      await authService.register(userData);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifySecurityWord = async (email, securityWord) => {
+    setIsLoading(true);
+    try {
+      return await authService.verifySecurityWord(email, securityWord);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email, securityWord, newPassword) => {
+    setIsLoading(true);
+    try {
+      return await authService.resetPassword(email, securityWord, newPassword);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setUser(null);
+    setToken(null);
+    await storageService.removeItem(STORAGE_KEYS.SESSION);
+  };
+
+  const value = {
+    user,
+    token,
+    isLoading,
+    isInitializing,
+    isAuthenticated: !!user,
+    login,
+    register,
+    verifySecurityWord,
+    resetPassword,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
