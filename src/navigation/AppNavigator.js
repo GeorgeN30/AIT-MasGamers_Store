@@ -1,23 +1,30 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useAuth } from '../context/AuthContext';
 
-// Pantallas de autenticación
+// Auth
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import RecoveryScreen from '../screens/auth/RecoveryScreen';
 
-// Pantallas del dashboard
+// Dashboard
 import HomeScreen from '../screens/dashboard/HomeScreen';
 import TicketDetailScreen from '../screens/dashboard/TicketDetailScreen';
 import NewTicketScreen from '../screens/dashboard/NewTicketScreen';
 
-const Stack = createNativeStackNavigator();
+import MediaScreen from '../screens/dashboard/MediaScreen';
+import TimelineScreen from '../screens/dashboard/TimelineScreen';
+import HistoryScreen from '../screens/dashboard/HistoryScreen';
 
-// Stack de no-autenticado
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
@@ -26,29 +33,114 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// Stack de autenticado
+function BottomTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerStyle: {
+          backgroundColor: '#1A202C',
+        },
+
+        headerTintColor: '#FFFFFF',
+
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          height: 65,
+          paddingBottom: 8,
+        },
+
+        tabBarActiveTintColor: '#1A202C',
+        tabBarInactiveTintColor: '#718096',
+
+        tabBarIcon: ({ color, size }) => {
+          let iconName;
+
+          if (route.name === 'Inicio') {
+            iconName = 'home';
+          } else if (route.name === 'Multimedia') {
+            iconName = 'camera';
+          } else if (route.name === 'Seguimiento') {
+            iconName = 'time';
+          } else if (route.name === 'Historial') {
+            iconName = 'stats-chart';
+          }
+
+          return (
+            <Ionicons
+              name={iconName}
+              size={size}
+              color={color}
+            />
+          );
+        },
+      })}
+    >
+      <Tab.Screen
+        name="Inicio"
+        component={HomeScreen}
+      />
+
+      <Tab.Screen
+        name="Multimedia"
+        component={MediaScreen}
+      />
+
+      <Tab.Screen
+        name="Seguimiento"
+        component={TimelineScreen}
+      />
+
+      <Tab.Screen
+        name="Historial"
+        component={HistoryScreen}
+      />
+    </Tab.Navigator>
+  );
+}
+
 const MainStack = () => (
-  <Stack.Navigator
-    screenOptions={{
-      headerStyle: { backgroundColor: '#1A202C' },
-      headerTintColor: '#FFFFFF',
-      headerTitleStyle: { fontWeight: 'bold' },
-    }}
-  >
-    <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'MG Soporte' }} />
-    <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ title: 'Detalle del Ticket' }} />
-    <Stack.Screen name="NewTicket" component={NewTicketScreen} options={{ title: 'Nuevo Ticket' }} />
+  <Stack.Navigator>
+    <Stack.Screen
+      name="MainTabs"
+      component={BottomTabs}
+      options={{ headerShown: false }}
+    />
+
+    <Stack.Screen
+      name="TicketDetail"
+      component={TicketDetailScreen}
+      options={{
+        title: 'Detalle del Ticket',
+        headerStyle: {
+          backgroundColor: '#1A202C',
+        },
+        headerTintColor: '#FFFFFF',
+      }}
+    />
+
+    <Stack.Screen
+      name="NewTicket"
+      component={NewTicketScreen}
+      options={{
+        title: 'Nuevo Ticket',
+        headerStyle: {
+          backgroundColor: '#1A202C',
+        },
+        headerTintColor: '#FFFFFF',
+      }}
+    />
   </Stack.Navigator>
 );
 
-// Pantalla de splash mientras se inicializa la sesión
 const SplashScreen = () => (
   <View style={styles.splash}>
-    <ActivityIndicator size="large" color="#1A202C" />
+    <ActivityIndicator
+      size="large"
+      color="#1A202C"
+    />
   </View>
 );
 
-// Navigator principal — decide qué stack mostrar
 export default function AppNavigator() {
   const { isAuthenticated, isInitializing } = useAuth();
 

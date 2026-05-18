@@ -139,4 +139,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
   },
+  menuButton: {
+  backgroundColor: '#1A202C',
+  padding: 16,
+  borderRadius: 12,
+  marginTop: 15,
+  },
+  menuText: {
+  color: '#FFFFFF',
+  textAlign: 'center',
+  fontWeight: 'bold',
+  fontSize: 16,
+  },
 });
