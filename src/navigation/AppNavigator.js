@@ -21,6 +21,7 @@ import NewTicketScreen from '../screens/dashboard/NewTicketScreen';
 import MediaScreen from '../screens/dashboard/MediaScreen';
 import TimelineScreen from '../screens/dashboard/TimelineScreen';
 import HistoryScreen from '../screens/dashboard/HistoryScreen';
+import ProfileScreen from '../screens/dashboard/ProfileScreen'; // NUEVA IMPORTACIÓN
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -63,6 +64,8 @@ function BottomTabs() {
             iconName = 'time';
           } else if (route.name === 'Historial') {
             iconName = 'stats-chart';
+          } else if (route.name === 'Perfil') { // NUEVO ÍCONO
+            iconName = 'person';
           }
 
           return (
@@ -93,6 +96,12 @@ function BottomTabs() {
       <Tab.Screen
         name="Historial"
         component={HistoryScreen}
+      />
+
+      {/* NUEVA PESTAÑA DE PERFIL */}
+      <Tab.Screen
+        name="Perfil"
+        component={ProfileScreen}
       />
     </Tab.Navigator>
   );
