@@ -1,41 +1,78 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 
 export default function TimelineScreen() {
+
+  const estados = [
+    'Equipo recibido',
+    'En diagnóstico',
+    'Garantía aprobada',
+    'Enviado al cliente',
+  ];
+
+  const [estadoActual, setEstadoActual] = useState(1);
+
+  const avanzarEstado = () => {
+
+    if (estadoActual < estados.length - 1) {
+      setEstadoActual(estadoActual + 1);
+    }
+  };
+
   return (
     <View style={styles.container}>
+
       <Text style={styles.title}>
-        Seguimiento del Equipo
+        Seguimiento en Tiempo Real
       </Text>
 
-      <View style={styles.stepCompleted}>
-        <Text style={styles.stepText}>
-          ✔ Equipo recibido
-        </Text>
-      </View>
+      {estados.map((estado, index) => (
 
-      <View style={styles.stepCompleted}>
-        <Text style={styles.stepText}>
-          ✔ En diagnóstico
-        </Text>
-      </View>
+        <View
+          key={index}
+          style={[
+            styles.step,
 
-      <View style={styles.stepActive}>
-        <Text style={styles.stepText}>
-          🟡 Garantía aprobada
-        </Text>
-      </View>
+            index < estadoActual
+              ? styles.completed
+              : index === estadoActual
+              ? styles.active
+              : styles.pending,
+          ]}
+        >
+          <Text style={styles.stepText}>
+            {index < estadoActual
+              ? '✔ '
+              : index === estadoActual
+              ? '🟡 '
+              : '⬜ '}
 
-      <View style={styles.stepPending}>
-        <Text style={styles.stepText}>
-          ⬜ Enviado al cliente
+            {estado}
+          </Text>
+
+        </View>
+      ))}
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={avanzarEstado}
+      >
+        <Text style={styles.buttonText}>
+          Actualizar Estado
         </Text>
-      </View>
+      </TouchableOpacity>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: '#F4F5F7',
@@ -49,28 +86,41 @@ const styles = StyleSheet.create({
     color: '#1A202C',
   },
 
-  stepCompleted: {
+  step: {
+    padding: 18,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+
+  completed: {
     backgroundColor: '#C6F6D5',
-    padding: 18,
-    borderRadius: 12,
-    marginBottom: 20,
   },
 
-  stepActive: {
+  active: {
     backgroundColor: '#FEEBC8',
-    padding: 18,
-    borderRadius: 12,
-    marginBottom: 20,
   },
 
-  stepPending: {
+  pending: {
     backgroundColor: '#E2E8F0',
-    padding: 18,
-    borderRadius: 12,
   },
 
   stepText: {
     fontSize: 16,
     fontWeight: 'bold',
   },
+
+  button: {
+    marginTop: 20,
+    backgroundColor: '#1A202C',
+    padding: 18,
+    borderRadius: 12,
+  },
+
+  buttonText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
 });

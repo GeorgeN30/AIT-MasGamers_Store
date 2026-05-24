@@ -1,47 +1,74 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+} from 'react-native';
 
 export default function HistoryScreen() {
+
+  const [fallas] = useState([
+
+    {
+      id: '1',
+      componente: 'RTX 4060',
+      cantidad: 12,
+    },
+
+    {
+      id: '2',
+      componente: 'HyperX Cloud II',
+      cantidad: 8,
+    },
+
+    {
+      id: '3',
+      componente: 'Redragon Kumara',
+      cantidad: 5,
+    },
+
+    {
+      id: '4',
+      componente: 'Ryzen 7 5800X',
+      cantidad: 3,
+    },
+
+  ]);
+
   return (
     <View style={styles.container}>
+
       <Text style={styles.title}>
         Historial de Fallas
       </Text>
 
-      <View style={styles.card}>
-        <Text style={styles.brand}>
-          RTX 4060
-        </Text>
+      <FlatList
+        data={fallas}
+        keyExtractor={(item) => item.id}
 
-        <Text style={styles.failures}>
-          12 fallas registradas
-        </Text>
-      </View>
+        renderItem={({ item }) => (
 
-      <View style={styles.card}>
-        <Text style={styles.brand}>
-          HyperX Cloud II
-        </Text>
+          <View style={styles.card}>
 
-        <Text style={styles.failures}>
-          8 fallas registradas
-        </Text>
-      </View>
+            <Text style={styles.component}>
+              {item.componente}
+            </Text>
 
-      <View style={styles.card}>
-        <Text style={styles.brand}>
-          Redragon Kumara
-        </Text>
+            <Text style={styles.count}>
+              {item.cantidad} fallas registradas
+            </Text>
 
-        <Text style={styles.failures}>
-          5 fallas registradas
-        </Text>
-      </View>
+          </View>
+        )}
+      />
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: '#F4F5F7',
@@ -62,15 +89,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  brand: {
+  component: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1A202C',
   },
 
-  failures: {
+  count: {
     marginTop: 10,
-    color: '#718096',
     fontSize: 15,
+    color: '#718096',
   },
+
 });
