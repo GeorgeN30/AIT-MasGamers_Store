@@ -82,6 +82,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // NUEVA FUNCIÓN: Actualizar el perfil (nombre y foto)
+  const updateProfile = async (newName, newAvatar) => {
+    const updatedUser = { ...user, name: newName, avatar: newAvatar };
+    setUser(updatedUser);
+    
+    // Guardamos los cambios en el almacenamiento local
+    if (token) {
+      await storageService.setItem(
+        STORAGE_KEYS.SESSION,
+        JSON.stringify({ token, user: updatedUser })
+      );
+    }
+  };
+
   const logout = async () => {
     setUser(null);
     setToken(null);
@@ -98,6 +112,7 @@ export const AuthProvider = ({ children }) => {
     register,
     verifySecurityWord,
     resetPassword,
+    updateProfile, // Exportamos la nueva función
     logout,
   };
 
