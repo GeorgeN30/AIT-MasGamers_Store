@@ -14,7 +14,7 @@ Aplicación móvil de soporte técnico para la comunidad MasGamers. Construida c
 
 ```bash
 # Clonar el repositorio y entrar al directorio
-git clone <repo-url>
+git clone git@github.com:GeorgeN30/AIT-MasGamers_Store.git
 cd AIT-MasGamers_Store
 
 # Instalar dependencias
