@@ -35,14 +35,16 @@ const guardarTicket = async () => {
       return;
     }
 
-    const nuevoTicket = {
-      id: Date.now().toString(),
-      categoria, 
-      equipo: equipo.trim(),
-      descripcion: descripcion.trim(),
-      imageUri,
-      estado: 'Recibido',
-      fecha: new Date().toLocaleDateString('es-PE'),
+     const nuevoTicket = {
+    id: Date.now().toString(),
+    codigo: `MG-${Date.now().toString().slice(-5)}`,
+    categoria,
+    equipo: equipo.trim(),
+    descripcion: descripcion.trim(),
+    imageUri,
+    estado: 'Equipo recibido',
+    prioridad: 'Media',
+    fecha: new Date().toLocaleDateString('es-PE'),
     };
 
     try {
