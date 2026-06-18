@@ -55,21 +55,30 @@ class ApiClient {
     });
   }
 
+  _mimeType(uri) {
+    const ext = uri.split('.').pop()?.toLowerCase();
+    const map = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+                  webm: 'audio/webm', mp4: 'audio/mp4', m4a: 'audio/mp4',
+                  mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg' };
+    return map[ext] || 'image/jpeg';
+  }
+
   async upload(endpoint, fileUri, fieldName = 'file') {
     const token = await this.getToken();
     const formData = new FormData();
+    const mimeType = this._mimeType(fileUri);
+    const ext = fileUri.split('.').pop() || 'jpg';
 
     const isWeb = typeof window !== 'undefined' && window.document;
     if (isWeb) {
       const response = await fetch(fileUri);
       const blob = await response.blob();
-      const ext = blob.type.split('/')[1] || 'jpg';
       formData.append(fieldName, blob, `upload.${ext}`);
     } else {
       formData.append(fieldName, {
         uri: fileUri,
-        type: 'image/jpeg',
-        name: 'upload.jpg',
+        type: mimeType,
+        name: `upload.${ext}`,
       });
     }
 
