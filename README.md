@@ -1,146 +1,181 @@
 # AIT-MasGamers Store — MG Soporte
 
-Aplicación móvil de soporte técnico para la comunidad MasGamers. Construida con React Native y Expo.
+Aplicación de soporte técnico para la comunidad MasGamers. Sistema completo con backend API, app móvil React Native (Expo) y panel de administración con roles.
 
 ---
 
-## Requisitos previos
+## Stack
+
+| Capa       | Tecnología                              |
+|------------|-----------------------------------------|
+| Frontend   | React Native + Expo + React Navigation  |
+| Backend    | Express + SQLite (sql.js) + JWT         |
+| Sensores   | Cámara, micrófono, GPS (expo-sensors)   |
+| Multimedia | expo-image-picker, expo-av              |
+
+---
+
+## Requisitos
 
 - Node.js ≥ 18
 - Expo CLI (`npm install -g expo-cli`)
-- Expo Go en tu dispositivo (para pruebas en móvil)
+- Expo Go (para pruebas físicas)
 
-## Instalación
+---
+
+## Instalación y ejecución
 
 ```bash
-# Clonar el repositorio y entrar al directorio
 git clone git@github.com:GeorgeN30/AIT-MasGamers_Store.git
 cd AIT-MasGamers_Store
 
-# Instalar dependencias
+# Frontend
 npm install
-
-# Dependencias de navegación (si no están instaladas)
 npx expo install @react-navigation/native-stack react-native-screens react-native-safe-area-context
+
+# Backend
+cd backend
+npm install
+node seed.js  # crea DB y datos de prueba
+npm start     # servidor en puerto 3000
 ```
 
-## Scripts disponibles
+### Iniciar app
 
-| Comando             | Descripción                              |
-|---------------------|------------------------------------------|
-| `npm start`         | Inicia el servidor de desarrollo (Expo)  |
-| `npm run android`   | Abre en emulador Android                 |
-| `npm run ios`       | Abre en simulador iOS                    |
-| `npm run web`       | Abre en el navegador (expo web)          |
-
----
-
-## Estructura del proyecto
-
-```
-src/
-├── assets/              # Imágenes, logos, iconos
-├── components/          # Componentes UI reutilizables
-├── context/
-│   └── AuthContext.js   # Estado global de sesión (login, logout, registro)
-├── database/
-│   └── mockUsers.json   # Usuarios de prueba para el entorno mock
-├── navigation/
-│   └── AppNavigator.js  # Configuración de rutas (AuthStack / MainStack)
-├── screens/
-│   ├── auth/
-│   │   ├── LoginScreen.js       # Inicio de sesión (layout adaptativo web/móvil)
-│   │   ├── RegisterScreen.js    # Registro con palabra de seguridad
-│   │   └── RecoveryScreen.js    # Recuperación de contraseña en 2 pasos
-│   └── dashboard/
-│       ├── HomeScreen.js        # Pantalla principal tras el login
-│       ├── TicketDetailScreen.js
-│       └── NewTicketScreen.js
-└── services/
-    ├── authService.js     # Lógica de autenticación (mock/real intercambiable)
-    └── storageService.js  # Almacenamiento persistente (localStorage / AsyncStorage)
+```bash
+npm start       # Expo dev server
+npm run web     # Solo web
+npm run android # Emulador Android
 ```
 
 ---
 
-## Autenticación
+## Scripts
 
-El módulo de autenticación está diseñado para funcionar inicialmente con datos locales y migrar al backend real sin cambios en el resto del código.
+| Comando           | Descripción                         |
+|-------------------|-------------------------------------|
+| `npm start`       | Servidor de desarrollo Expo         |
+| `npm run web`     | Abrir en navegador                  |
+| `npm run android` | Abrir en emulador Android           |
+| `npm run ios`     | Abrir en simulador iOS              |
+| `cd backend && npm start` | Inicia API en puerto 3000    |
 
-### Modo mock (actual)
+---
 
-Los usuarios se definen en `src/database/mockUsers.json`. Los usuarios registrados desde la app se guardan en `localStorage` (`mg_users`). La sesión activa se persiste en `localStorage` (`mg_session`).
+## Estructura
 
-**Usuarios de prueba:**
+```
+AIT-MasGamers_Store/
+├── backend/
+│   ├── server.js              # Express app
+│   ├── db.js                  # SQLite (sql.js)
+│   ├── seed.js                # Datos de prueba
+│   ├── uploads/               # Archivos subidos
+│   ├── middleware/
+│   │   ├── auth.js            # JWT verification
+│   │   └── requireRole.js     # Role guard
+│   └── routes/
+│       ├── auth.routes.js     # Login, register, recovery
+│       ├── tickets.routes.js  # CRUD tickets + logs
+│       ├── users.routes.js    # Listado usuarios (admin)
+│       └── dashboard.routes.js# Stats (admin)
+├── src/
+│   ├── config.js              # API base URL
+│   ├── context/
+│   │   └── AuthContext.js     # Sesión global con JWT
+│   ├── navigation/
+│   │   └── AppNavigator.js    # Bottom tabs + stacks
+│   ├── screens/
+│   │   ├── auth/
+│   │   │   ├── LoginScreen.js
+│   │   │   ├── RegisterScreen.js
+│   │   │   └── RecoveryScreen.js
+│   │   └── dashboard/
+│   │       ├── HomeScreen.js
+│   │       ├── NewTicketScreen.js   # Cámara, audio, GPS
+│   │       ├── HistoryScreen.js     # Lista de tickets
+│   │       ├── TicketDetailScreen.js# Detalle + imagen + audio
+│   │       ├── MediaScreen.js       # Gestión multimedia
+│   │       ├── ProfileScreen.js
+│   │       ├── TimelineScreen.js    # Seguimiento visual
+│   │       └── admin/
+│   │           ├── AdminDashboard.js
+│   │           ├── AdminTicketList.js
+│   │           └── AdminUsers.js
+│   └── services/
+│       ├── api.js              # HTTP client con JWT + upload
+│       ├── authService.js      # Auth API calls
+│       ├── ticketService.js    # Ticket API calls
+│       ├── locationService.js  # Geolocalización
+│       └── storageService.js   # AsyncStorage / localStorage
+```
+
+---
+
+## API Endpoints
+
+| Método | Ruta                    | Auth     | Rol   | Descripción              |
+|--------|-------------------------|----------|-------|--------------------------|
+| POST   | /api/auth/login         | No       | —     | Iniciar sesión           |
+| POST   | /api/auth/register      | No       | —     | Registro                 |
+| POST   | /api/auth/security-word | No       | —     | Verificar palabra seg.   |
+| POST   | /api/auth/reset-password| No       | —     | Cambiar contraseña       |
+| GET    | /api/tickets            | JWT      | —     | Tickets propios (o todos si admin) |
+| GET    | /api/tickets/:id        | JWT      | —     | Detalle de ticket        |
+| POST   | /api/tickets            | JWT      | —     | Crear ticket             |
+| PUT    | /api/tickets/:id/status | JWT      | admin | Cambiar estado           |
+| GET    | /api/tickets/:id/logs   | JWT      | —     | Historial de cambios     |
+| POST   | /api/upload             | JWT      | —     | Subir imagen/audio       |
+| GET    | /api/users              | JWT      | admin | Listar usuarios          |
+| GET    | /api/dashboard/stats    | JWT      | admin | Estadísticas             |
+| GET    | /api/health             | No       | —     | Health check             |
+
+---
+
+## Roles
+
+### user
+- Crear tickets con foto, audio y ubicación GPS
+- Ver solo sus propios tickets
+- Seguimiento visual por estados
+
+### admin
+- Todo lo de user +
+- Dashboard con estadísticas
+- Lista de todos los tickets con filtros
+- Cambiar estado de cualquier ticket
+- Gestión de usuarios
+
+---
+
+## Usuarios de prueba (seed)
 
 | Email                  | Contraseña | Rol   |
 |------------------------|------------|-------|
 | admin@masgamers.com    | admin123   | admin |
-| george@gmail.com       | george123  | user  |
-
-### Migración al backend real
-
-En `src/services/authService.js`:
-
-```js
-const USE_MOCK = false;
-const BASE_URL = 'https://tu-api.com/api';
-```
-
-Los endpoints esperados por el servicio son:
-
-| Operación              | Método | Ruta                    |
-|------------------------|--------|-------------------------|
-| Login                  | POST   | `/auth/login`           |
-| Registro               | POST   | `/auth/register`        |
-| Verificar seg. word    | POST   | `/auth/verify-security` |
-| Cambiar contraseña     | POST   | `/auth/reset-password`  |
-
-### Almacenamiento en móvil (iOS/Android)
-
-Para dispositivos reales, instalar AsyncStorage y descomentar las líneas correspondientes en `src/services/storageService.js`:
-
-```bash
-npx expo install @react-native-async-storage/async-storage
-```
+| juan@email.com         | 123456     | user  |
+| maria@email.com        | 123456     | user  |
+| carlos@email.com       | 123456     | user  |
 
 ---
 
-## Recuperación de contraseña
+## Funcionalidades por pantalla
 
-Al no disponer de servidor de correo en la etapa mock, la recuperación usa una **palabra de seguridad** definida en el registro. El flujo es:
-
-1. Usuario ingresa su correo + palabra de seguridad.
-2. Si coinciden → puede establecer una nueva contraseña.
-
----
-
-## Personalización del Login
-
-La pantalla de login en web muestra un panel de imagen a la izquierda. Para cambiar la imagen, editar la constante al inicio de `src/screens/auth/LoginScreen.js`:
-
-```js
-const BRAND_IMAGE_URI = 'https://tu-url-de-imagen.com/foto.jpg';
-// O una imagen local:
-// const BRAND_IMAGE_URI = require('../../assets/mi-imagen.jpg');
-```
-
----
-
-## Tecnologías utilizadas
-
-| Tecnología                | Versión  | Uso                              |
-|---------------------------|----------|----------------------------------|
-| React Native              | 0.81.5   | Framework base                   |
-| Expo                      | ~54.0.33 | Herramientas de desarrollo       |
-| @react-navigation/native  | ^7.2.4   | Sistema de navegación            |
-| @react-navigation/native-stack | —   | Navegador de pilas               |
-| react-native-screens      | —        | Optimización de pantallas        |
-| react-native-safe-area-context | — | Áreas seguras del dispositivo    |
+| Pantalla            | Funcionalidad                                      |
+|---------------------|----------------------------------------------------|
+| Login/Register      | Auth con JWT, registro con palabra de seguridad    |
+| NewTicket           | Seleccionar categoría, foto, grabar audio, GPS     |
+| History             | Lista de tickets con iconos de adjuntos            |
+| TicketDetail        | Ver imagen, reproducir audio, ubicación en mapa    |
+| Timeline            | Seguimiento visual del estado del ticket           |
+| Media               | Subir imágenes desde galería                       |
+| Profile             | Datos del perfil y cierre de sesión                |
+| AdminDashboard      | Stats: total tickets, hoy, usuarios, por estado    |
+| AdminTicketList     | Todos los tickets con filtros                      |
+| AdminUsers          | Lista de usuarios registrados                      |
 
 ---
 
 ## Licencia
-@GeorgeNs
 
 Proyecto académico — Universidad Tecnológica del Perú (UTP).
