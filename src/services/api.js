@@ -59,11 +59,19 @@ class ApiClient {
     const token = await this.getToken();
     const formData = new FormData();
 
-    formData.append(fieldName, {
-      uri: fileUri,
-      type: 'image/jpeg',
-      name: 'upload.jpg',
-    });
+    const isWeb = typeof window !== 'undefined' && window.document;
+    if (isWeb) {
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
+      const ext = blob.type.split('/')[1] || 'jpg';
+      formData.append(fieldName, blob, `upload.${ext}`);
+    } else {
+      formData.append(fieldName, {
+        uri: fileUri,
+        type: 'image/jpeg',
+        name: 'upload.jpg',
+      });
+    }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
