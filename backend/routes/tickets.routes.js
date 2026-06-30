@@ -218,7 +218,7 @@ router.put('/:id', verifyToken, requireRole('admin'), (req, res) => {
   }
 });
 
-router.delete('/:id', verifyToken, requireRole('admin'), (req, res) => {
+router.post('/:id/delete', verifyToken, requireRole('admin'), (req, res) => {
   try {
     const ticket = prepare('SELECT * FROM tickets WHERE id = ?').get([req.params.id]);
 

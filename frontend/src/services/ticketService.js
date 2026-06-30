@@ -31,7 +31,7 @@ export const ticketService = {
   },
 
   deleteTicket(id) {
-    return api.delete(`/tickets/${id}`);
+    return api.post(`/tickets/${id}/delete`);
   },
 
   getRecentActivity() {

@@ -10,7 +10,7 @@ export const userService = {
   },
 
   deactivate(id) {
-    return api.delete(`/users/${id}`);
+    return api.post(`/users/${id}/deactivate`);
   },
 
   restore(id) {

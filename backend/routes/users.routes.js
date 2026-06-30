@@ -134,7 +134,7 @@ router.put('/:id', verifyToken, requireRole('admin'), (req, res) => {
   }
 });
 
-router.delete('/:id', verifyToken, requireRole('admin'), (req, res) => {
+router.post('/:id/deactivate', verifyToken, requireRole('admin'), (req, res) => {
   try {
     if (req.params.id === req.user.id) {
       return res.status(400).json({ message: 'No puedes desactivarte a ti mismo' });
