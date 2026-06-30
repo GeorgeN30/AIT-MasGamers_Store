@@ -64,10 +64,17 @@ function initTables() {
       estado_anterior TEXT,
       estado_nuevo TEXT NOT NULL,
       changedBy TEXT NOT NULL,
+      nota TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (ticketId) REFERENCES tickets(id)
     )
   `);
+
+  try {
+    db.run("ALTER TABLE ticket_logs ADD COLUMN nota TEXT");
+  } catch (e) {
+    // column already exists
+  }
 }
 
 function saveDb() {

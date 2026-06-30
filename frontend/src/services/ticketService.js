@@ -18,8 +18,8 @@ export const ticketService = {
     return api.post('/tickets', data);
   },
 
-  updateStatus(id, estado) {
-    return api.put(`/tickets/${id}/status`, { estado });
+  updateStatus(id, estado, nota) {
+    return api.put(`/tickets/${id}/status`, { estado, nota });
   },
 
   getLogs(id) {
@@ -32,6 +32,10 @@ export const ticketService = {
 
   deleteTicket(id) {
     return api.delete(`/tickets/${id}`);
+  },
+
+  getRecentActivity() {
+    return api.get('/tickets/recent-activity');
   },
 
   uploadMedia(fileUri) {

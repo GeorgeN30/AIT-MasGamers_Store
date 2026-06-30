@@ -44,6 +44,34 @@ router.get('/', verifyToken, (req, res) => {
   }
 });
 
+router.get('/recent-activity', verifyToken, (req, res) => {
+  try {
+    let sql;
+    let params;
+    if (req.user.role === 'admin') {
+      sql = `SELECT l.*, u.name as changedByName, t.equipo, t.descripcion
+             FROM ticket_logs l
+             JOIN users u ON l.changedBy = u.id
+             JOIN tickets t ON l.ticketId = t.id
+             ORDER BY l.created_at DESC LIMIT 5`;
+      params = [];
+    } else {
+      sql = `SELECT l.*, u.name as changedByName, t.equipo, t.descripcion
+             FROM ticket_logs l
+             JOIN users u ON l.changedBy = u.id
+             JOIN tickets t ON l.ticketId = t.id
+             WHERE t.userId = ?
+             ORDER BY l.created_at DESC LIMIT 5`;
+      params = [req.user.id];
+    }
+    const logs = prepare(sql).all(params);
+    res.json({ logs });
+  } catch (err) {
+    console.error('Recent activity error:', err);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
 router.get('/:id', verifyToken, (req, res) => {
   try {
     const ticket = prepare(
@@ -82,8 +110,8 @@ router.post('/', verifyToken, (req, res) => {
            imageUri || null, audioUri || null, latitude || null, longitude || null, 'Recibido']);
 
     prepare(
-      'INSERT INTO ticket_logs (id, ticketId, estado_nuevo, changedBy) VALUES (?, ?, ?, ?)'
-    ).run([uuidv4(), id, 'Recibido', req.user.id]);
+      'INSERT INTO ticket_logs (id, ticketId, estado_nuevo, changedBy, nota) VALUES (?, ?, ?, ?, ?)'
+    ).run([uuidv4(), id, 'Recibido', req.user.id, null]);
 
     const ticket = prepare('SELECT * FROM tickets WHERE id = ?').get([id]);
     res.status(201).json({ message: 'Ticket creado exitosamente', ticket });
@@ -95,7 +123,7 @@ router.post('/', verifyToken, (req, res) => {
 
 router.put('/:id/status', verifyToken, requireRole('admin'), (req, res) => {
   try {
-    const { estado } = req.body;
+    const { estado, nota } = req.body;
     const validEstados = ['Recibido', 'En diagnóstico', 'En reparación', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
 
     if (!estado || !validEstados.includes(estado)) {
@@ -113,8 +141,8 @@ router.put('/:id/status', verifyToken, requireRole('admin'), (req, res) => {
       .run([estado, req.params.id]);
 
     prepare(
-      'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy) VALUES (?, ?, ?, ?, ?)'
-    ).run([uuidv4(), req.params.id, estadoAnterior, estado, req.user.id]);
+      'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run([uuidv4(), req.params.id, estadoAnterior, estado, req.user.id, nota || null]);
 
     const updated = prepare('SELECT * FROM tickets WHERE id = ?').get([req.params.id]);
     res.json({ message: 'Estado actualizado', ticket: updated });

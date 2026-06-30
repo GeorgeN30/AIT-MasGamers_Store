@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Linking, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Linking, TextInput, Modal } from 'react-native';
 import { Audio } from 'expo-av';
 import { ticketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
@@ -19,6 +19,9 @@ export default function TicketDetailScreen({ route, navigation }) {
   const [editEquipo, setEditEquipo] = useState('');
   const [editDescripcion, setEditDescripcion] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [showNotaModal, setShowNotaModal] = useState(false);
+  const [pendingEstado, setPendingEstado] = useState(null);
+  const [notaTexto, setNotaTexto] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -42,15 +45,24 @@ export default function TicketDetailScreen({ route, navigation }) {
     return sound ? () => { sound.unloadAsync(); } : undefined;
   }, [sound]);
 
-  const changeStatus = async (estado) => {
+  const confirmStatusChange = async () => {
     try {
-      const result = await ticketService.updateStatus(ticketId, estado);
+      const result = await ticketService.updateStatus(ticketId, pendingEstado, notaTexto.trim());
       setTicket(result.ticket);
       const logsData = await ticketService.getLogs(ticketId);
       setLogs(logsData.logs);
+      setShowNotaModal(false);
+      setNotaTexto('');
+      setPendingEstado(null);
     } catch (e) {
       Alert.alert('Error', e.message);
     }
+  };
+
+  const changeStatus = (estado) => {
+    setPendingEstado(estado);
+    setNotaTexto('');
+    setShowNotaModal(true);
   };
 
   const startEdit = () => {
@@ -85,7 +97,9 @@ export default function TicketDetailScreen({ route, navigation }) {
         onPress: async () => {
           try {
             await ticketService.deleteTicket(ticketId);
-            navigation.goBack();
+            Alert.alert('Eliminado', 'El ticket fue eliminado correctamente', [
+              { text: 'OK', onPress: () => navigation.goBack() },
+            ]);
           } catch (e) {
             Alert.alert('Error', e.message);
           }
@@ -230,7 +244,8 @@ export default function TicketDetailScreen({ route, navigation }) {
               >
                 <Text style={[
                   styles.statusBtnText,
-                  (ticket.estado === estado || index < currentIndex) && styles.statusBtnTextActive,
+                  ticket.estado === estado && styles.statusBtnTextActive,
+                  index < currentIndex && styles.statusBtnTextPast,
                 ]}>
                   {estado}
                 </Text>
@@ -249,16 +264,43 @@ export default function TicketDetailScreen({ route, navigation }) {
         </View>
       )}
 
+      <Modal visible={showNotaModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cambiar a: {pendingEstado}</Text>
+            <Text style={styles.modalLabel}>Nota (opcional):</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={notaTexto}
+              onChangeText={setNotaTexto}
+              placeholder="Motivo del cambio..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalConfirmBtn} onPress={confirmStatusChange}>
+                <Text style={styles.modalConfirmText}>Confirmar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowNotaModal(false)}>
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Text style={styles.sectionTitle}>Historial</Text>
       {logs.map((log) => (
         <View key={log.id} style={styles.logItem}>
           <View style={styles.logDot} />
           <View style={styles.logContent}>
             <Text style={styles.logText}>
-              {log.estado_anterior ? `${log.estado_anterior} ÔåÆ ${log.estado_nuevo}` : log.estado_nuevo}
+              {log.estado_anterior ? `${log.estado_anterior} → ${log.estado_nuevo}` : log.estado_nuevo}
             </Text>
+            {log.nota ? <Text style={styles.logNota}>📝 {log.nota}</Text> : null}
             <Text style={styles.logMeta}>
-              {log.changedByName} ┬À {log.created_at?.substring(0, 10)}
+              {log.changedByName} · {log.created_at?.substring(0, 10)}
             </Text>
           </View>
         </View>
@@ -299,9 +341,10 @@ const styles = StyleSheet.create({
   statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statusBtn: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, backgroundColor: '#E2E8F0', borderWidth: 1, borderColor: '#CBD5E0' },
   statusBtnActive: { backgroundColor: '#1A202C', borderColor: '#1A202C' },
-  statusBtnPast: { backgroundColor: '#C6F6D5', borderColor: '#68D391' },
+  statusBtnPast: { backgroundColor: '#C6F6D5', borderColor: '#38A169' },
   statusBtnText: { fontSize: 12, color: '#4A5568' },
   statusBtnTextActive: { color: '#FFFFFF', fontWeight: 'bold' },
+  statusBtnTextPast: { color: '#2D3748', fontWeight: 'bold' },
   adminActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
   editTicketButton: { flex: 1, backgroundColor: '#1A202C', padding: 12, borderRadius: 8, alignItems: 'center' },
   editTicketText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
@@ -318,5 +361,16 @@ const styles = StyleSheet.create({
   logDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#3182CE', marginTop: 5, marginRight: 12 },
   logContent: { flex: 1 },
   logText: { fontSize: 14, color: '#2D3748' },
+  logNota: { fontSize: 13, color: '#718096', fontStyle: 'italic', marginTop: 2 },
   logMeta: { fontSize: 12, color: '#A0AEC0', marginTop: 2 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#FFF', borderRadius: 12, padding: 24, width: '85%', maxWidth: 400 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A202C', marginBottom: 12 },
+  modalLabel: { fontSize: 14, color: '#4A5568', marginBottom: 8 },
+  modalInput: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#CBD5E0', borderRadius: 6, padding: 12, fontSize: 15, color: '#1A202C', marginBottom: 16, minHeight: 80, textAlignVertical: 'top' },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  modalConfirmBtn: { flex: 1, backgroundColor: '#1A202C', padding: 12, borderRadius: 8, alignItems: 'center' },
+  modalConfirmText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
+  modalCancelBtn: { flex: 1, backgroundColor: '#A0AEC0', padding: 12, borderRadius: 8, alignItems: 'center' },
+  modalCancelText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
 });
