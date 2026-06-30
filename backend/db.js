@@ -56,8 +56,14 @@ function initTables() {
       FOREIGN KEY (userId) REFERENCES users(id)
     )
   `);
+  try {
+    db.run("ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1");
+  } catch (e) {
+    // columna ya existe
+  }
 
   db.run(`
+
     CREATE TABLE IF NOT EXISTS ticket_logs (
       id TEXT PRIMARY KEY,
       ticketId TEXT NOT NULL,

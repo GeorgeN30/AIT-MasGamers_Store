@@ -22,6 +22,8 @@ export default function TicketDetailScreen({ route, navigation }) {
   const [showNotaModal, setShowNotaModal] = useState(false);
   const [pendingEstado, setPendingEstado] = useState(null);
   const [notaTexto, setNotaTexto] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -88,24 +90,23 @@ export default function TicketDetailScreen({ route, navigation }) {
     }
   };
 
+  const confirmDelete = async () => {
+    setDeleting(true);
+    try {
+      await ticketService.deleteTicket(ticketId);
+      setShowDeleteModal(false);
+      setDeleting(false);
+      Alert.alert('Eliminado', 'El ticket fue eliminado correctamente', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } catch (e) {
+      setDeleting(false);
+      Alert.alert('Error', e.message);
+    }
+  };
+
   const handleDelete = () => {
-    Alert.alert('Eliminar ticket', 'Esta accion no se puede deshacer. Seguro?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await ticketService.deleteTicket(ticketId);
-            Alert.alert('Eliminado', 'El ticket fue eliminado correctamente', [
-              { text: 'OK', onPress: () => navigation.goBack() },
-            ]);
-          } catch (e) {
-            Alert.alert('Error', e.message);
-          }
-        },
-      },
-    ]);
+    setShowDeleteModal(true);
   };
 
   const playAudio = async () => {
@@ -290,6 +291,23 @@ export default function TicketDetailScreen({ route, navigation }) {
         </View>
       </Modal>
 
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Eliminar ticket</Text>
+            <Text style={styles.modalBody}>Esta accion no se puede deshacer. Seguro?</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.deleteConfirmBtn} onPress={confirmDelete} disabled={deleting}>
+                <Text style={styles.deleteConfirmText}>{deleting ? 'Eliminando...' : 'Eliminar'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowDeleteModal(false)}>
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Text style={styles.sectionTitle}>Historial</Text>
       {logs.map((log) => (
         <View key={log.id} style={styles.logItem}>
@@ -350,6 +368,8 @@ const styles = StyleSheet.create({
   editTicketText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
   deleteTicketButton: { flex: 1, backgroundColor: '#E53E3E', padding: 12, borderRadius: 8, alignItems: 'center' },
   deleteTicketText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  deleteConfirmBtn: { flex: 1, backgroundColor: '#E53E3E', padding: 12, borderRadius: 8, alignItems: 'center' },
+  deleteConfirmText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
   editInput: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CBD5E0', borderRadius: 6, padding: 10, fontSize: 15, color: '#1A202C', marginBottom: 10 },
   editTextArea: { height: 100, textAlignVertical: 'top' },
   editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
@@ -366,6 +386,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#FFF', borderRadius: 12, padding: 24, width: '85%', maxWidth: 400 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A202C', marginBottom: 12 },
+  modalBody: { fontSize: 15, color: '#4A5568', marginBottom: 20, lineHeight: 22 },
   modalLabel: { fontSize: 14, color: '#4A5568', marginBottom: 8 },
   modalInput: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#CBD5E0', borderRadius: 6, padding: 12, fontSize: 15, color: '#1A202C', marginBottom: 16, minHeight: 80, textAlignVertical: 'top' },
   modalActions: { flexDirection: 'row', gap: 10 },
