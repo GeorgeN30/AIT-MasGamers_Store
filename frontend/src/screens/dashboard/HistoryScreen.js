@@ -1,37 +1,115 @@
 ﻿import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ticketService } from '../../services/ticketService';
+
+const ESTADOS = ['', 'Recibido', 'En diagnostico', 'En reparacion', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
+const CATEGORIAS = ['', 'Soporte Tecnico', 'Ventas'];
 
 export default function HistoryScreen({ navigation }) {
   const [tickets, setTickets] = useState([]);
   const [error, setError] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [estadoFiltro, setEstadoFiltro] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+  const [showEstados, setShowEstados] = useState(false);
+  const [showCategorias, setShowCategorias] = useState(false);
+
+  const fetchTickets = useCallback(async () => {
+    try {
+      const data = await ticketService.getAll({ estado: estadoFiltro, categoria: categoriaFiltro, q: busqueda.trim() });
+      setTickets(data.tickets);
+      setError('');
+    } catch (e) {
+      setError(e.message);
+    }
+  }, [estadoFiltro, categoriaFiltro, busqueda]);
 
   useFocusEffect(
     useCallback(() => {
-      const loadTickets = async () => {
-        try {
-          const data = await ticketService.getAll();
-          setTickets(data.tickets);
-        } catch (e) {
-          setError(e.message);
-        }
-      };
-      loadTickets();
-    }, [])
+      fetchTickets();
+    }, [fetchTickets])
   );
+
+  const aplicarFiltros = () => {
+    setShowEstados(false);
+    setShowCategorias(false);
+    fetchTickets();
+  };
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstadoFiltro('');
+    setCategoriaFiltro('');
+  };
 
   const getMediaIcons = (ticket) => {
     const icons = [];
-    if (ticket.imageUri) icons.push('­ƒôÀ');
-    if (ticket.audioUri) icons.push('­ƒÄñ');
-    if (ticket.latitude && ticket.longitude) icons.push('­ƒôì');
+    if (ticket.imageUri) icons.push('📷');
+    if (ticket.audioUri) icons.push('🎤');
+    if (ticket.latitude && ticket.longitude) icons.push('📍');
     return icons;
   };
+
+  const hasActiveFilters = busqueda || estadoFiltro || categoriaFiltro;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Historial</Text>
+
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por equipo o descripcion..."
+          placeholderTextColor="#999"
+          value={busqueda}
+          onChangeText={setBusqueda}
+          onSubmitEditing={aplicarFiltros}
+          returnKeyType="search"
+        />
+      </View>
+
+      <View style={styles.filterRow}>
+        <View style={styles.filterItem}>
+          <TouchableOpacity style={styles.filterButton} onPress={() => { setShowEstados(!showEstados); setShowCategorias(false); }}>
+            <Text style={styles.filterButtonText}>{estadoFiltro || 'Estado'}</Text>
+          </TouchableOpacity>
+          {showEstados && (
+            <View style={styles.dropdown}>
+              {ESTADOS.map((e) => (
+                <TouchableOpacity key={e} style={[styles.dropdownItem, estadoFiltro === e && styles.dropdownItemActive]} onPress={() => { setEstadoFiltro(e); setShowEstados(false); }}>
+                  <Text style={[styles.dropdownText, estadoFiltro === e && styles.dropdownTextActive]}>{e || 'Todos'}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.filterItem}>
+          <TouchableOpacity style={styles.filterButton} onPress={() => { setShowCategorias(!showCategorias); setShowEstados(false); }}>
+            <Text style={styles.filterButtonText}>{categoriaFiltro || 'Categoria'}</Text>
+          </TouchableOpacity>
+          {showCategorias && (
+            <View style={styles.dropdown}>
+              {CATEGORIAS.map((c) => (
+                <TouchableOpacity key={c} style={[styles.dropdownItem, categoriaFiltro === c && styles.dropdownItemActive]} onPress={() => { setCategoriaFiltro(c); setShowCategorias(false); }}>
+                  <Text style={[styles.dropdownText, categoriaFiltro === c && styles.dropdownTextActive]}>{c || 'Todas'}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity style={styles.applyButton} onPress={aplicarFiltros}>
+          <Text style={styles.applyButtonText}>Filtrar</Text>
+        </TouchableOpacity>
+
+        {hasActiveFilters ? (
+          <TouchableOpacity style={styles.clearButton} onPress={limpiarFiltros}>
+            <Text style={styles.clearButtonText}>X</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
 
       {error ? (
         <View style={styles.errorBox}>
@@ -71,9 +149,9 @@ export default function HistoryScreen({ navigation }) {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>­ƒôè</Text>
+          <Text style={styles.emptyIcon}>📋</Text>
           <Text style={styles.emptyTitle}>Sin tickets</Text>
-          <Text style={styles.emptyDesc}>A├║n no has registrado ninguna incidencia.</Text>
+          <Text style={styles.emptyDesc}>No se encontraron tickets con esos filtros.</Text>
         </View>
       )}
     </View>
@@ -82,7 +160,22 @@ export default function HistoryScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F5F7', padding: 20 },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 30, color: '#1A202C' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 16, color: '#1A202C' },
+  searchRow: { marginBottom: 12 },
+  searchInput: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, padding: 12, fontSize: 15, color: '#1A202C' },
+  filterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' },
+  filterItem: { position: 'relative', zIndex: 10 },
+  filterButton: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CBD5E0', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 14 },
+  filterButtonText: { color: '#4A5568', fontSize: 14, fontWeight: '500' },
+  dropdown: { position: 'absolute', top: 42, left: 0, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, minWidth: 180, zIndex: 100, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8 },
+  dropdownItem: { paddingVertical: 10, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#EDF2F7' },
+  dropdownItemActive: { backgroundColor: '#EBF4FF' },
+  dropdownText: { color: '#2D3748', fontSize: 14 },
+  dropdownTextActive: { color: '#3182CE', fontWeight: 'bold' },
+  applyButton: { backgroundColor: '#1A202C', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16 },
+  applyButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+  clearButton: { backgroundColor: '#E53E3E', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 14, marginLeft: 4 },
+  clearButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
   errorBox: { backgroundColor: '#FFF5F5', borderWidth: 1, borderColor: '#FC8181', borderRadius: 6, padding: 10, marginBottom: 16 },
   errorText: { color: '#C53030', fontSize: 13, textAlign: 'center' },
   card: {

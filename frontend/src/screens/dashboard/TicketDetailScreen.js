@@ -1,12 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Linking, TextInput, Modal } from 'react-native';
 import { Audio } from 'expo-av';
 import { ticketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
 
 const ESTADOS = ['Recibido', 'En diagn├│stico', 'En reparaci├│n', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
 
-export default function TicketDetailScreen({ route }) {
+export default function TicketDetailScreen({ route, navigation }) {
   const { ticketId } = route.params || {};
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -15,6 +15,15 @@ export default function TicketDetailScreen({ route }) {
   const [loading, setLoading] = useState(true);
   const [sound, setSound] = useState(null);
   const [playing, setPlaying] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editEquipo, setEditEquipo] = useState('');
+  const [editDescripcion, setEditDescripcion] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [showNotaModal, setShowNotaModal] = useState(false);
+  const [pendingEstado, setPendingEstado] = useState(null);
+  const [notaTexto, setNotaTexto] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -38,15 +47,66 @@ export default function TicketDetailScreen({ route }) {
     return sound ? () => { sound.unloadAsync(); } : undefined;
   }, [sound]);
 
-  const changeStatus = async (estado) => {
+  const confirmStatusChange = async () => {
     try {
-      const result = await ticketService.updateStatus(ticketId, estado);
+      const result = await ticketService.updateStatus(ticketId, pendingEstado, notaTexto.trim());
       setTicket(result.ticket);
       const logsData = await ticketService.getLogs(ticketId);
       setLogs(logsData.logs);
+      setShowNotaModal(false);
+      setNotaTexto('');
+      setPendingEstado(null);
     } catch (e) {
       Alert.alert('Error', e.message);
     }
+  };
+
+  const changeStatus = (estado) => {
+    setPendingEstado(estado);
+    setNotaTexto('');
+    setShowNotaModal(true);
+  };
+
+  const startEdit = () => {
+    setEditEquipo(ticket.equipo);
+    setEditDescripcion(ticket.descripcion);
+    setEditMode(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editEquipo.trim() || !editDescripcion.trim()) {
+      Alert.alert('Error', 'Todos los campos son obligatorios');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const result = await ticketService.updateTicket(ticketId, { equipo: editEquipo.trim(), descripcion: editDescripcion.trim() });
+      setTicket(result.ticket);
+      setEditMode(false);
+    } catch (e) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    try {
+      await ticketService.deleteTicket(ticketId);
+      setShowDeleteModal(false);
+      setDeleting(false);
+      Alert.alert('Eliminado', 'El ticket fue eliminado correctamente', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } catch (e) {
+      setDeleting(false);
+      Alert.alert('Error', e.message);
+    }
+  };
+
+  const handleDelete = () => {
+    setShowDeleteModal(true);
   };
 
   const playAudio = async () => {
@@ -110,10 +170,29 @@ export default function TicketDetailScreen({ route }) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.equipo}>{ticket.equipo}</Text>
-        <Text style={styles.categoria}>{ticket.categoria}</Text>
-        <Text style={styles.descripcion}>{ticket.descripcion}</Text>
-        <Text style={styles.date}>Creado: {ticket.created_at?.substring(0, 10)}</Text>
+        {editMode ? (
+          <>
+            <TextInput style={styles.editInput} value={editEquipo} onChangeText={setEditEquipo} placeholder="Equipo" />
+            <TextInput style={[styles.editInput, styles.editTextArea]} value={editDescripcion} onChangeText={setEditDescripcion} placeholder="Descripcion" multiline numberOfLines={4} />
+            <Text style={styles.categoria}>{ticket.categoria}</Text>
+            <Text style={styles.date}>Creado: {ticket.created_at?.substring(0, 10)}</Text>
+            <View style={styles.editActions}>
+              <TouchableOpacity style={styles.saveEditButton} onPress={saveEdit} disabled={savingEdit}>
+                <Text style={styles.saveEditText}>{savingEdit ? 'Guardando...' : 'Guardar'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelEditButton} onPress={() => setEditMode(false)}>
+                <Text style={styles.cancelEditText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.equipo}>{ticket.equipo}</Text>
+            <Text style={styles.categoria}>{ticket.categoria}</Text>
+            <Text style={styles.descripcion}>{ticket.descripcion}</Text>
+            <Text style={styles.date}>Creado: {ticket.created_at?.substring(0, 10)}</Text>
+          </>
+        )}
       </View>
 
       <View style={styles.statusCard}>
@@ -166,15 +245,68 @@ export default function TicketDetailScreen({ route }) {
               >
                 <Text style={[
                   styles.statusBtnText,
-                  (ticket.estado === estado || index < currentIndex) && styles.statusBtnTextActive,
+                  ticket.estado === estado && styles.statusBtnTextActive,
+                  index < currentIndex && styles.statusBtnTextPast,
                 ]}>
                   {estado}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
+
+          <View style={styles.adminActions}>
+            <TouchableOpacity style={styles.editTicketButton} onPress={startEdit}>
+              <Text style={styles.editTicketText}>Editar ticket</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteTicketButton} onPress={handleDelete}>
+              <Text style={styles.deleteTicketText}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
+
+      <Modal visible={showNotaModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cambiar a: {pendingEstado}</Text>
+            <Text style={styles.modalLabel}>Nota (opcional):</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={notaTexto}
+              onChangeText={setNotaTexto}
+              placeholder="Motivo del cambio..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalConfirmBtn} onPress={confirmStatusChange}>
+                <Text style={styles.modalConfirmText}>Confirmar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowNotaModal(false)}>
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Eliminar ticket</Text>
+            <Text style={styles.modalBody}>Esta accion no se puede deshacer. Seguro?</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.deleteConfirmBtn} onPress={confirmDelete} disabled={deleting}>
+                <Text style={styles.deleteConfirmText}>{deleting ? 'Eliminando...' : 'Eliminar'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowDeleteModal(false)}>
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Text style={styles.sectionTitle}>Historial</Text>
       {logs.map((log) => (
@@ -182,10 +314,11 @@ export default function TicketDetailScreen({ route }) {
           <View style={styles.logDot} />
           <View style={styles.logContent}>
             <Text style={styles.logText}>
-              {log.estado_anterior ? `${log.estado_anterior} ÔåÆ ${log.estado_nuevo}` : log.estado_nuevo}
+              {log.estado_anterior ? `${log.estado_anterior} → ${log.estado_nuevo}` : log.estado_nuevo}
             </Text>
+            {log.nota ? <Text style={styles.logNota}>📝 {log.nota}</Text> : null}
             <Text style={styles.logMeta}>
-              {log.changedByName} ┬À {log.created_at?.substring(0, 10)}
+              {log.changedByName} · {log.created_at?.substring(0, 10)}
             </Text>
           </View>
         </View>
@@ -226,12 +359,39 @@ const styles = StyleSheet.create({
   statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statusBtn: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, backgroundColor: '#E2E8F0', borderWidth: 1, borderColor: '#CBD5E0' },
   statusBtnActive: { backgroundColor: '#1A202C', borderColor: '#1A202C' },
-  statusBtnPast: { backgroundColor: '#C6F6D5', borderColor: '#68D391' },
+  statusBtnPast: { backgroundColor: '#C6F6D5', borderColor: '#38A169' },
   statusBtnText: { fontSize: 12, color: '#4A5568' },
   statusBtnTextActive: { color: '#FFFFFF', fontWeight: 'bold' },
+  statusBtnTextPast: { color: '#2D3748', fontWeight: 'bold' },
+  adminActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  editTicketButton: { flex: 1, backgroundColor: '#1A202C', padding: 12, borderRadius: 8, alignItems: 'center' },
+  editTicketText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  deleteTicketButton: { flex: 1, backgroundColor: '#E53E3E', padding: 12, borderRadius: 8, alignItems: 'center' },
+  deleteTicketText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  deleteConfirmBtn: { flex: 1, backgroundColor: '#E53E3E', padding: 12, borderRadius: 8, alignItems: 'center' },
+  deleteConfirmText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
+  editInput: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CBD5E0', borderRadius: 6, padding: 10, fontSize: 15, color: '#1A202C', marginBottom: 10 },
+  editTextArea: { height: 100, textAlignVertical: 'top' },
+  editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  saveEditButton: { flex: 1, backgroundColor: '#38A169', padding: 10, borderRadius: 6, alignItems: 'center' },
+  saveEditText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  cancelEditButton: { flex: 1, backgroundColor: '#A0AEC0', padding: 10, borderRadius: 6, alignItems: 'center' },
+  cancelEditText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
   logItem: { flexDirection: 'row', marginBottom: 12 },
   logDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#3182CE', marginTop: 5, marginRight: 12 },
   logContent: { flex: 1 },
   logText: { fontSize: 14, color: '#2D3748' },
+  logNota: { fontSize: 13, color: '#718096', fontStyle: 'italic', marginTop: 2 },
   logMeta: { fontSize: 12, color: '#A0AEC0', marginTop: 2 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#FFF', borderRadius: 12, padding: 24, width: '85%', maxWidth: 400 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A202C', marginBottom: 12 },
+  modalBody: { fontSize: 15, color: '#4A5568', marginBottom: 20, lineHeight: 22 },
+  modalLabel: { fontSize: 14, color: '#4A5568', marginBottom: 8 },
+  modalInput: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#CBD5E0', borderRadius: 6, padding: 12, fontSize: 15, color: '#1A202C', marginBottom: 16, minHeight: 80, textAlignVertical: 'top' },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  modalConfirmBtn: { flex: 1, backgroundColor: '#1A202C', padding: 12, borderRadius: 8, alignItems: 'center' },
+  modalConfirmText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
+  modalCancelBtn: { flex: 1, backgroundColor: '#A0AEC0', padding: 12, borderRadius: 8, alignItems: 'center' },
+  modalCancelText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
 });
