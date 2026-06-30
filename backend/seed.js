@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');

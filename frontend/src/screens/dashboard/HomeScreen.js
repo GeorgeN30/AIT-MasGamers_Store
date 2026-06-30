@@ -136,4 +136,6 @@ const styles = StyleSheet.create({
   emptyDesc: { fontSize: 14, color: '#718096', textAlign: 'center' },
   logoutButton: { padding: 14, alignItems: 'center' },
   logoutText: { color: '#E53E3E', fontWeight: '600', fontSize: 15 },
+  menuButton: { backgroundColor: '#1A202C', padding: 16, borderRadius: 12, marginTop: 15 },
+  menuText: { color: '#FFFFFF', textAlign: 'center', fontWeight: 'bold', fontSize: 16 },
 });
