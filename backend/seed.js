@@ -1,11 +1,17 @@
+require('dotenv').config();
+
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { getDb, prepare, saveDb } = require('./db');
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@masgamers.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_SECURITY_WORD = process.env.ADMIN_SECURITY_WORD || 'masgamers';
+
 async function seed() {
   await getDb();
 
-  const existingAdmin = prepare('SELECT id FROM users WHERE email = ?').get(['admin@masgamers.com']);
+  const existingAdmin = prepare('SELECT id FROM users WHERE email = ?').get([ADMIN_EMAIL]);
   if (existingAdmin) {
     console.log('La base de datos ya tiene datos. Elimina masgamers.db para resetear.');
     return;
@@ -14,14 +20,14 @@ async function seed() {
   const adminId = uuidv4();
   const userId = uuidv4();
 
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const adminSecurity = await bcrypt.hash('masgamers', 10);
+  const adminPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  const adminSecurity = await bcrypt.hash(ADMIN_SECURITY_WORD, 10);
   const userPassword = await bcrypt.hash('george123', 10);
   const userSecurity = await bcrypt.hash('dragon', 10);
 
   prepare(
     'INSERT INTO users (id, name, email, password, securityWord, role, avatar) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run([adminId, 'Admin MasGamers', 'admin@masgamers.com', adminPassword, adminSecurity, 'admin', null]);
+  ).run([adminId, 'Admin MasGamers', ADMIN_EMAIL, adminPassword, adminSecurity, 'admin', null]);
 
   prepare(
     'INSERT INTO users (id, name, email, password, securityWord, role, avatar) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -29,7 +35,7 @@ async function seed() {
          'https://i.pinimg.com/736x/a9/78/e4/a978e4c72b435fd4d7abb4840b0e049f.jpg']);
 
   console.log('Usuarios creados:');
-  console.log('  Admin: admin@masgamers.com / admin123');
+  console.log(`  Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
   console.log('  User:  george@gmail.com / george123');
 
   const tickets = [
@@ -89,4 +95,8 @@ async function seed() {
   console.log('\nSeed completado exitosamente');
 }
 
-seed().catch(console.error);
+if (require.main === module) {
+  seed().catch(console.error);
+}
+
+module.exports = { seed };
