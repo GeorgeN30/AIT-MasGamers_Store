@@ -1,5 +1,5 @@
 ﻿import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ticketService } from '../../services/ticketService';
 
@@ -70,35 +70,13 @@ export default function HistoryScreen({ navigation }) {
       </View>
 
       <View style={styles.filterRow}>
-        <View style={styles.filterItem}>
-          <TouchableOpacity style={styles.filterButton} onPress={() => { setShowEstados(!showEstados); setShowCategorias(false); }}>
-            <Text style={styles.filterButtonText}>{estadoFiltro || 'Estado'}</Text>
-          </TouchableOpacity>
-          {showEstados && (
-            <View style={styles.dropdown}>
-              {ESTADOS.map((e) => (
-                <TouchableOpacity key={e} style={[styles.dropdownItem, estadoFiltro === e && styles.dropdownItemActive]} onPress={() => { setEstadoFiltro(e); setShowEstados(false); }}>
-                  <Text style={[styles.dropdownText, estadoFiltro === e && styles.dropdownTextActive]}>{e || 'Todos'}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
+        <TouchableOpacity style={styles.filterButton} onPress={() => { setShowEstados(true); setShowCategorias(false); }}>
+          <Text style={styles.filterButtonText}>{estadoFiltro || 'Estado'}</Text>
+        </TouchableOpacity>
 
-        <View style={styles.filterItem}>
-          <TouchableOpacity style={styles.filterButton} onPress={() => { setShowCategorias(!showCategorias); setShowEstados(false); }}>
-            <Text style={styles.filterButtonText}>{categoriaFiltro || 'Categoria'}</Text>
-          </TouchableOpacity>
-          {showCategorias && (
-            <View style={styles.dropdown}>
-              {CATEGORIAS.map((c) => (
-                <TouchableOpacity key={c} style={[styles.dropdownItem, categoriaFiltro === c && styles.dropdownItemActive]} onPress={() => { setCategoriaFiltro(c); setShowCategorias(false); }}>
-                  <Text style={[styles.dropdownText, categoriaFiltro === c && styles.dropdownTextActive]}>{c || 'Todas'}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
+        <TouchableOpacity style={styles.filterButton} onPress={() => { setShowCategorias(true); setShowEstados(false); }}>
+          <Text style={styles.filterButtonText}>{categoriaFiltro || 'Categoria'}</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.applyButton} onPress={aplicarFiltros}>
           <Text style={styles.applyButtonText}>Filtrar</Text>
@@ -110,6 +88,30 @@ export default function HistoryScreen({ navigation }) {
           </TouchableOpacity>
         ) : null}
       </View>
+
+      <Modal visible={showEstados} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowEstados(false)}>
+          <View style={styles.modalDropdown}>
+            {ESTADOS.map((e) => (
+              <TouchableOpacity key={e} style={[styles.dropdownItem, estadoFiltro === e && styles.dropdownItemActive]} onPress={() => { setEstadoFiltro(e); setShowEstados(false); }}>
+                <Text style={[styles.dropdownText, estadoFiltro === e && styles.dropdownTextActive]}>{e || 'Todos'}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal visible={showCategorias} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowCategorias(false)}>
+          <View style={styles.modalDropdown}>
+            {CATEGORIAS.map((c) => (
+              <TouchableOpacity key={c} style={[styles.dropdownItem, categoriaFiltro === c && styles.dropdownItemActive]} onPress={() => { setCategoriaFiltro(c); setShowCategorias(false); }}>
+                <Text style={[styles.dropdownText, categoriaFiltro === c && styles.dropdownTextActive]}>{c || 'Todas'}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {error ? (
         <View style={styles.errorBox}>
@@ -163,12 +165,12 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 16, color: '#1A202C' },
   searchRow: { marginBottom: 12 },
   searchInput: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, padding: 12, fontSize: 15, color: '#1A202C' },
-  filterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' },
-  filterItem: { position: 'relative', zIndex: 10 },
+  filterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap', zIndex: 10 },
   filterButton: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CBD5E0', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 14 },
   filterButtonText: { color: '#4A5568', fontSize: 14, fontWeight: '500' },
-  dropdown: { position: 'absolute', top: 42, left: 0, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, minWidth: 180, zIndex: 100, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8 },
-  dropdownItem: { paddingVertical: 10, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#EDF2F7' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
+  modalDropdown: { backgroundColor: '#FFFFFF', borderRadius: 12, minWidth: 220, padding: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 20 },
+  dropdownItem: { paddingVertical: 12, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#EDF2F7' },
   dropdownItemActive: { backgroundColor: '#EBF4FF' },
   dropdownText: { color: '#2D3748', fontSize: 14 },
   dropdownTextActive: { color: '#3182CE', fontWeight: 'bold' },
