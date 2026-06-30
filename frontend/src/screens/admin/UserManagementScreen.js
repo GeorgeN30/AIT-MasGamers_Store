@@ -1,11 +1,14 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { userService } from '../../services/userService';
 
 export default function UserManagementScreen() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showActiveModal, setShowActiveModal] = useState(false);
+  const [pendingUser, setPendingUser] = useState(null);
+  const [processingUser, setProcessingUser] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -31,31 +34,30 @@ export default function UserManagementScreen() {
     }
   };
 
-  const toggleActive = async (user) => {
-    const action = user.active ? 'desactivar' : 'restaurar';
-    const confirmMsg = user.active
-      ? `Desactivar a ${user.name}? Podras restaurarlo despues.`
-      : `Restaurar a ${user.name}?`;
+  const toggleActive = (user) => {
+    setPendingUser(user);
+    setShowActiveModal(true);
+  };
 
-    Alert.alert('Confirmar', confirmMsg, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: user.active ? 'Desactivar' : 'Restaurar',
-        style: user.active ? 'destructive' : 'default',
-        onPress: async () => {
-          try {
-            if (user.active) {
-              await userService.deactivate(user.id);
-            } else {
-              await userService.restore(user.id);
-            }
-            setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, active: user.active ? 0 : 1 } : u));
-          } catch (e) {
-            Alert.alert('Error', e.message);
-          }
-        },
-      },
-    ]);
+  const confirmToggleActive = async () => {
+    if (!pendingUser) return;
+    setProcessingUser(true);
+    try {
+      const wasActive = pendingUser.active;
+      if (wasActive) {
+        await userService.deactivate(pendingUser.id);
+      } else {
+        await userService.restore(pendingUser.id);
+      }
+      setUsers((prev) => prev.map((u) => u.id === pendingUser.id ? { ...u, active: wasActive ? 0 : 1 } : u));
+      setShowActiveModal(false);
+      setPendingUser(null);
+      setProcessingUser(false);
+      Alert.alert('Listo', wasActive ? 'Usuario desactivado correctamente' : 'Usuario restaurado correctamente');
+    } catch (e) {
+      setProcessingUser(false);
+      Alert.alert('Error', e.message);
+    }
   };
 
   if (loading) {
@@ -117,6 +119,35 @@ export default function UserManagementScreen() {
         )}
         showsVerticalScrollIndicator={false}
       />
+
+      <Modal visible={showActiveModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {pendingUser?.active ? 'Desactivar usuario' : 'Restaurar usuario'}
+            </Text>
+            <Text style={styles.modalBody}>
+              {pendingUser?.active
+                ? `Desactivar a ${pendingUser?.name}? Podras restaurarlo despues.`
+                : `Restaurar a ${pendingUser?.name}?`}
+            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, pendingUser?.active ? styles.dangerButton : styles.successButton]}
+                onPress={confirmToggleActive}
+                disabled={processingUser}
+              >
+                <Text style={styles.modalBtnText}>
+                  {processingUser ? 'Procesando...' : pendingUser?.active ? 'Desactivar' : 'Restaurar'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowActiveModal(false)}>
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -146,4 +177,13 @@ const styles = StyleSheet.create({
   actionTextWhite: { color: '#FFFFFF' },
   dangerButton: { backgroundColor: '#E53E3E', borderColor: '#E53E3E' },
   successButton: { backgroundColor: '#38A169', borderColor: '#38A169' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#FFF', borderRadius: 12, padding: 24, width: '85%', maxWidth: 400 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A202C', marginBottom: 12 },
+  modalBody: { fontSize: 15, color: '#4A5568', marginBottom: 20, lineHeight: 22 },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  modalBtn: { flex: 1, padding: 12, borderRadius: 8, alignItems: 'center' },
+  modalBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
+  modalCancelBtn: { flex: 1, backgroundColor: '#A0AEC0', padding: 12, borderRadius: 8, alignItems: 'center' },
+  modalCancelText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
 });

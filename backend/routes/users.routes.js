@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { prepare } = require('../db');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireActive } = require('../middleware/auth');
 const { requireRole } = require('../middleware/requireRole');
 
 const router = express.Router();
@@ -19,7 +19,7 @@ router.get('/', verifyToken, requireRole('admin'), (req, res) => {
   }
 });
 
-router.put('/profile', verifyToken, (req, res) => {
+router.put('/profile', verifyToken, requireActive, (req, res) => {
   try {
     const { name, avatar } = req.body;
 
@@ -57,7 +57,7 @@ router.put('/profile', verifyToken, (req, res) => {
   }
 });
 
-router.put('/password', verifyToken, async (req, res) => {
+router.put('/password', verifyToken, requireActive, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -134,7 +134,7 @@ router.put('/:id', verifyToken, requireRole('admin'), (req, res) => {
   }
 });
 
-router.delete('/:id', verifyToken, requireRole('admin'), (req, res) => {
+router.post('/:id/deactivate', verifyToken, requireRole('admin'), (req, res) => {
   try {
     if (req.params.id === req.user.id) {
       return res.status(400).json({ message: 'No puedes desactivarte a ti mismo' });

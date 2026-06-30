@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
@@ -57,27 +57,27 @@ async function seed() {
     ).run([ticketId, t.userId, t.categoria, t.equipo, t.descripcion, t.estado, date.toISOString()]);
 
     prepare(
-      'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run([uuidv4(), ticketId, null, 'Recibido', t.userId, date.toISOString()]);
+      'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run([uuidv4(), ticketId, null, 'Recibido', t.userId, null, date.toISOString()]);
 
     if (t.estado === 'En diagnóstico') {
       const d2 = new Date(date);
       d2.setDate(d2.getDate() + 1);
       prepare(
-        'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run([uuidv4(), ticketId, 'Recibido', 'En diagnóstico', adminId, d2.toISOString()]);
+        'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).run([uuidv4(), ticketId, 'Recibido', 'En diagnóstico', adminId, null, d2.toISOString()]);
     }
     if (t.estado === 'En reparación') {
       const d2 = new Date(date);
       d2.setDate(d2.getDate() + 1);
       prepare(
-        'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run([uuidv4(), ticketId, 'Recibido', 'En diagnóstico', adminId, d2.toISOString()]);
+        'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).run([uuidv4(), ticketId, 'Recibido', 'En diagnóstico', adminId, null, d2.toISOString()]);
       const d3 = new Date(date);
       d3.setDate(d3.getDate() + 2);
       prepare(
-        'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run([uuidv4(), ticketId, 'En diagnóstico', 'En reparación', adminId, d3.toISOString()]);
+        'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).run([uuidv4(), ticketId, 'En diagnóstico', 'En reparación', adminId, null, d3.toISOString()]);
     }
     if (t.estado === 'Cerrado') {
       const estados = ['Recibido', 'En diagnóstico', 'En reparación', 'Reparado', 'Enviado al cliente', 'Cerrado'];
@@ -85,8 +85,8 @@ async function seed() {
         const d = new Date(date);
         d.setDate(d.getDate() + j);
         prepare(
-          'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-        ).run([uuidv4(), ticketId, estados[j - 1], estados[j], j < 4 ? adminId : userId, d.toISOString()]);
+          'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).run([uuidv4(), ticketId, estados[j - 1], estados[j], j < 4 ? adminId : userId, null, d.toISOString()]);
       }
     }
   }
