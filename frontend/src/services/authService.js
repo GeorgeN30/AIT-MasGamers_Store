@@ -20,4 +20,12 @@ export const authService = {
   getProfile() {
     return api.get('/auth/me');
   },
+
+  updateProfile(userData) {
+    return api.put('/users/profile', userData);
+  },
+
+  changePassword(currentPassword, newPassword) {
+    return api.put('/users/password', { currentPassword, newPassword });
+  },
 };

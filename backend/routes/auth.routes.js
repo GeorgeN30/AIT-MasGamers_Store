@@ -55,6 +55,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
     }
 
+    if (!user.active) {
+      return res.status(403).json({ message: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
+    }
+
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
@@ -142,14 +146,19 @@ router.post('/reset-password', async (req, res) => {
 
 router.get('/me', verifyToken, (req, res) => {
   const user = prepare(
-    'SELECT id, name, email, role, avatar, created_at FROM users WHERE id = ?'
+    'SELECT id, name, email, role, avatar, created_at, active FROM users WHERE id = ?'
   ).get([req.user.id]);
 
   if (!user) {
     return res.status(404).json({ message: 'Usuario no encontrado' });
   }
 
-  res.json({ user });
+  if (!user.active) {
+    return res.status(403).json({ message: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
+  }
+
+  const { active, ...safeUser } = user;
+  res.json({ user: safeUser });
 });
 
 module.exports = router;

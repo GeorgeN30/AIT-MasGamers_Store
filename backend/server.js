@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 
 const authRoutes = require('./routes/auth.routes');
 const ticketRoutes = require('./routes/tickets.routes');
@@ -11,6 +11,7 @@ const userRoutes = require('./routes/users.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const { verifyToken } = require('./middleware/auth');
 const { getDb } = require('./db');
+const { seed } = require('./seed');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,6 +53,7 @@ app.use((err, req, res, next) => {
 
 async function start() {
   await getDb();
+  await seed();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`MasGamers API corriendo en http://0.0.0.0:${PORT}`);
   });
