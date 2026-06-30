@@ -21,7 +21,8 @@ import NewTicketScreen from '../screens/dashboard/NewTicketScreen';
 import MediaScreen from '../screens/dashboard/MediaScreen';
 import TimelineScreen from '../screens/dashboard/TimelineScreen';
 import HistoryScreen from '../screens/dashboard/HistoryScreen';
-import ProfileScreen from '../screens/dashboard/ProfileScreen'; // NUEVA IMPORTACIÓN
+import ProfileScreen from '../screens/dashboard/ProfileScreen';
+import UserManagementScreen from '../screens/admin/UserManagementScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -132,6 +133,18 @@ const MainStack = () => (
       component={NewTicketScreen}
       options={{
         title: 'Nuevo Ticket',
+        headerStyle: {
+          backgroundColor: '#1A202C',
+        },
+        headerTintColor: '#FFFFFF',
+      }}
+    />
+
+    <Stack.Screen
+      name="UserManagement"
+      component={UserManagementScreen}
+      options={{
+        title: 'Usuarios',
         headerStyle: {
           backgroundColor: '#1A202C',
         },
