@@ -1,8 +1,13 @@
 import { api } from './api';
 
 export const ticketService = {
-  getAll() {
-    return api.get('/tickets');
+  getAll(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.estado) params.append('estado', filters.estado);
+    if (filters.categoria) params.append('categoria', filters.categoria);
+    if (filters.q) params.append('q', filters.q);
+    const query = params.toString();
+    return api.get(`/tickets${query ? '?' + query : ''}`);
   },
 
   getById(id) {

@@ -8,18 +8,35 @@ const router = express.Router();
 
 router.get('/', verifyToken, (req, res) => {
   try {
-    let tickets;
+    const { estado, categoria, q } = req.query;
+    const conditions = [];
+    const params = [];
 
-    if (req.user.role === 'admin') {
-      tickets = prepare(
-        'SELECT t.*, u.name as userName FROM tickets t JOIN users u ON t.userId = u.id ORDER BY t.created_at DESC'
-      ).all();
-    } else {
-      tickets = prepare(
-        'SELECT t.*, u.name as userName FROM tickets t JOIN users u ON t.userId = u.id WHERE t.userId = ? ORDER BY t.created_at DESC'
-      ).all([req.user.id]);
+    if (req.user.role !== 'admin') {
+      conditions.push('t.userId = ?');
+      params.push(req.user.id);
     }
 
+    if (estado) {
+      conditions.push('t.estado = ?');
+      params.push(estado);
+    }
+
+    if (categoria) {
+      conditions.push('t.categoria = ?');
+      params.push(categoria);
+    }
+
+    if (q && q.trim()) {
+      conditions.push('(t.equipo LIKE ? OR t.descripcion LIKE ?)');
+      const like = `%${q.trim()}%`;
+      params.push(like, like);
+    }
+
+    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+    const sql = `SELECT t.*, u.name as userName FROM tickets t JOIN users u ON t.userId = u.id ${where} ORDER BY t.created_at DESC`;
+
+    const tickets = prepare(sql).all(params);
     res.json({ tickets });
   } catch (err) {
     console.error('Get tickets error:', err);
