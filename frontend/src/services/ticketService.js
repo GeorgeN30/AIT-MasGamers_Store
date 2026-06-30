@@ -26,6 +26,14 @@ export const ticketService = {
     return api.get(`/tickets/${id}/logs`);
   },
 
+  updateTicket(id, data) {
+    return api.put(`/tickets/${id}`, data);
+  },
+
+  deleteTicket(id) {
+    return api.delete(`/tickets/${id}`);
+  },
+
   uploadMedia(fileUri) {
     return api.upload('/upload', fileUri);
   },

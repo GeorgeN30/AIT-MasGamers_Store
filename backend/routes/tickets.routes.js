@@ -147,4 +147,65 @@ router.get('/:id/logs', verifyToken, (req, res) => {
   }
 });
 
+router.put('/:id', verifyToken, requireRole('admin'), (req, res) => {
+  try {
+    const { equipo, descripcion, categoria } = req.body;
+    const ticket = prepare('SELECT * FROM tickets WHERE id = ?').get([req.params.id]);
+
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket no encontrado' });
+    }
+
+    const fields = [];
+    const values = [];
+
+    if (equipo !== undefined) {
+      if (!equipo.trim()) return res.status(400).json({ message: 'El equipo no puede estar vacio' });
+      fields.push('equipo = ?');
+      values.push(equipo.trim());
+    }
+    if (descripcion !== undefined) {
+      if (!descripcion.trim()) return res.status(400).json({ message: 'La descripcion no puede estar vacia' });
+      fields.push('descripcion = ?');
+      values.push(descripcion.trim());
+    }
+    if (categoria !== undefined) {
+      fields.push('categoria = ?');
+      values.push(categoria);
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ message: 'No hay campos para actualizar' });
+    }
+
+    fields.push("updated_at = datetime('now')");
+    values.push(req.params.id);
+    prepare(`UPDATE tickets SET ${fields.join(', ')} WHERE id = ?`).run(values);
+
+    const updated = prepare('SELECT * FROM tickets WHERE id = ?').get([req.params.id]);
+    res.json({ message: 'Ticket actualizado', ticket: updated });
+  } catch (err) {
+    console.error('Update ticket error:', err);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
+router.delete('/:id', verifyToken, requireRole('admin'), (req, res) => {
+  try {
+    const ticket = prepare('SELECT * FROM tickets WHERE id = ?').get([req.params.id]);
+
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket no encontrado' });
+    }
+
+    prepare('DELETE FROM ticket_logs WHERE ticketId = ?').run([req.params.id]);
+    prepare('DELETE FROM tickets WHERE id = ?').run([req.params.id]);
+
+    res.json({ message: 'Ticket eliminado correctamente' });
+  } catch (err) {
+    console.error('Delete ticket error:', err);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
 module.exports = router;

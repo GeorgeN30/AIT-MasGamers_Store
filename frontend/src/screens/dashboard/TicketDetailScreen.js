@@ -1,12 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Linking, TextInput } from 'react-native';
 import { Audio } from 'expo-av';
 import { ticketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
 
 const ESTADOS = ['Recibido', 'En diagn├│stico', 'En reparaci├│n', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
 
-export default function TicketDetailScreen({ route }) {
+export default function TicketDetailScreen({ route, navigation }) {
   const { ticketId } = route.params || {};
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -15,6 +15,10 @@ export default function TicketDetailScreen({ route }) {
   const [loading, setLoading] = useState(true);
   const [sound, setSound] = useState(null);
   const [playing, setPlaying] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editEquipo, setEditEquipo] = useState('');
+  const [editDescripcion, setEditDescripcion] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -47,6 +51,47 @@ export default function TicketDetailScreen({ route }) {
     } catch (e) {
       Alert.alert('Error', e.message);
     }
+  };
+
+  const startEdit = () => {
+    setEditEquipo(ticket.equipo);
+    setEditDescripcion(ticket.descripcion);
+    setEditMode(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editEquipo.trim() || !editDescripcion.trim()) {
+      Alert.alert('Error', 'Todos los campos son obligatorios');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const result = await ticketService.updateTicket(ticketId, { equipo: editEquipo.trim(), descripcion: editDescripcion.trim() });
+      setTicket(result.ticket);
+      setEditMode(false);
+    } catch (e) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert('Eliminar ticket', 'Esta accion no se puede deshacer. Seguro?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await ticketService.deleteTicket(ticketId);
+            navigation.goBack();
+          } catch (e) {
+            Alert.alert('Error', e.message);
+          }
+        },
+      },
+    ]);
   };
 
   const playAudio = async () => {
@@ -110,10 +155,29 @@ export default function TicketDetailScreen({ route }) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.equipo}>{ticket.equipo}</Text>
-        <Text style={styles.categoria}>{ticket.categoria}</Text>
-        <Text style={styles.descripcion}>{ticket.descripcion}</Text>
-        <Text style={styles.date}>Creado: {ticket.created_at?.substring(0, 10)}</Text>
+        {editMode ? (
+          <>
+            <TextInput style={styles.editInput} value={editEquipo} onChangeText={setEditEquipo} placeholder="Equipo" />
+            <TextInput style={[styles.editInput, styles.editTextArea]} value={editDescripcion} onChangeText={setEditDescripcion} placeholder="Descripcion" multiline numberOfLines={4} />
+            <Text style={styles.categoria}>{ticket.categoria}</Text>
+            <Text style={styles.date}>Creado: {ticket.created_at?.substring(0, 10)}</Text>
+            <View style={styles.editActions}>
+              <TouchableOpacity style={styles.saveEditButton} onPress={saveEdit} disabled={savingEdit}>
+                <Text style={styles.saveEditText}>{savingEdit ? 'Guardando...' : 'Guardar'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelEditButton} onPress={() => setEditMode(false)}>
+                <Text style={styles.cancelEditText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.equipo}>{ticket.equipo}</Text>
+            <Text style={styles.categoria}>{ticket.categoria}</Text>
+            <Text style={styles.descripcion}>{ticket.descripcion}</Text>
+            <Text style={styles.date}>Creado: {ticket.created_at?.substring(0, 10)}</Text>
+          </>
+        )}
       </View>
 
       <View style={styles.statusCard}>
@@ -173,6 +237,15 @@ export default function TicketDetailScreen({ route }) {
               </TouchableOpacity>
             ))}
           </View>
+
+          <View style={styles.adminActions}>
+            <TouchableOpacity style={styles.editTicketButton} onPress={startEdit}>
+              <Text style={styles.editTicketText}>Editar ticket</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteTicketButton} onPress={handleDelete}>
+              <Text style={styles.deleteTicketText}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -229,6 +302,18 @@ const styles = StyleSheet.create({
   statusBtnPast: { backgroundColor: '#C6F6D5', borderColor: '#68D391' },
   statusBtnText: { fontSize: 12, color: '#4A5568' },
   statusBtnTextActive: { color: '#FFFFFF', fontWeight: 'bold' },
+  adminActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  editTicketButton: { flex: 1, backgroundColor: '#1A202C', padding: 12, borderRadius: 8, alignItems: 'center' },
+  editTicketText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  deleteTicketButton: { flex: 1, backgroundColor: '#E53E3E', padding: 12, borderRadius: 8, alignItems: 'center' },
+  deleteTicketText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  editInput: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CBD5E0', borderRadius: 6, padding: 10, fontSize: 15, color: '#1A202C', marginBottom: 10 },
+  editTextArea: { height: 100, textAlignVertical: 'top' },
+  editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  saveEditButton: { flex: 1, backgroundColor: '#38A169', padding: 10, borderRadius: 6, alignItems: 'center' },
+  saveEditText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  cancelEditButton: { flex: 1, backgroundColor: '#A0AEC0', padding: 10, borderRadius: 6, alignItems: 'center' },
+  cancelEditText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
   logItem: { flexDirection: 'row', marginBottom: 12 },
   logDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#3182CE', marginTop: 5, marginRight: 12 },
   logContent: { flex: 1 },
