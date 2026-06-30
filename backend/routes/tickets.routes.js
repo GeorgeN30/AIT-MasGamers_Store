@@ -1,12 +1,12 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { prepare } = require('../db');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireActive } = require('../middleware/auth');
 const { requireRole } = require('../middleware/requireRole');
 
 const router = express.Router();
 
-router.get('/', verifyToken, (req, res) => {
+router.get('/', verifyToken, requireActive, (req, res) => {
   try {
     const { estado, categoria, q } = req.query;
     const conditions = [];
@@ -44,7 +44,7 @@ router.get('/', verifyToken, (req, res) => {
   }
 });
 
-router.get('/recent-activity', verifyToken, (req, res) => {
+router.get('/recent-activity', verifyToken, requireActive, (req, res) => {
   try {
     let sql;
     let params;
@@ -72,7 +72,7 @@ router.get('/recent-activity', verifyToken, (req, res) => {
   }
 });
 
-router.get('/:id', verifyToken, (req, res) => {
+router.get('/:id', verifyToken, requireActive, (req, res) => {
   try {
     const ticket = prepare(
       'SELECT t.*, u.name as userName FROM tickets t JOIN users u ON t.userId = u.id WHERE t.id = ?'
@@ -93,7 +93,7 @@ router.get('/:id', verifyToken, (req, res) => {
   }
 });
 
-router.post('/', verifyToken, (req, res) => {
+router.post('/', verifyToken, requireActive, (req, res) => {
   try {
     const { categoria, equipo, descripcion, imageUri, audioUri, latitude, longitude } = req.body;
 
@@ -121,7 +121,7 @@ router.post('/', verifyToken, (req, res) => {
   }
 });
 
-router.put('/:id/status', verifyToken, requireRole('admin'), (req, res) => {
+router.put('/:id/status', verifyToken, requireActive, requireRole('admin'), (req, res) => {
   try {
     const { estado, nota } = req.body;
     const validEstados = ['Recibido', 'En diagnóstico', 'En reparación', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
@@ -152,7 +152,7 @@ router.put('/:id/status', verifyToken, requireRole('admin'), (req, res) => {
   }
 });
 
-router.get('/:id/logs', verifyToken, (req, res) => {
+router.get('/:id/logs', verifyToken, requireActive, (req, res) => {
   try {
     const ticket = prepare('SELECT * FROM tickets WHERE id = ?').get([req.params.id]);
 
@@ -175,7 +175,7 @@ router.get('/:id/logs', verifyToken, (req, res) => {
   }
 });
 
-router.put('/:id', verifyToken, requireRole('admin'), (req, res) => {
+router.put('/:id', verifyToken, requireActive, requireRole('admin'), (req, res) => {
   try {
     const { equipo, descripcion, categoria } = req.body;
     const ticket = prepare('SELECT * FROM tickets WHERE id = ?').get([req.params.id]);
@@ -218,7 +218,7 @@ router.put('/:id', verifyToken, requireRole('admin'), (req, res) => {
   }
 });
 
-router.post('/:id/delete', verifyToken, requireRole('admin'), (req, res) => {
+router.post('/:id/delete', verifyToken, requireActive, requireRole('admin'), (req, res) => {
   try {
     const ticket = prepare('SELECT * FROM tickets WHERE id = ?').get([req.params.id]);
 
