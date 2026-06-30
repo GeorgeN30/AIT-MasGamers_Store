@@ -37,8 +37,17 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.emptyDesc}>Crea un ticket para recibir soporte técnico</Text>
       </View>
 
+      {user?.role === 'admin' && (
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => navigation.navigate('UserManagement')}
+        >
+          <Text style={styles.menuText}>Gestionar Usuarios</Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>Cerrar sesión</Text>
+        <Text style={styles.logoutText}>Cerrar sesion</Text>
       </TouchableOpacity>
     </View>
   );

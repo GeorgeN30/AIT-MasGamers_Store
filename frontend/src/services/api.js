@@ -55,6 +55,10 @@ class ApiClient {
     });
   }
 
+  delete(endpoint) {
+    return this.request(endpoint, { method: 'DELETE' });
+  }
+
   _mimeType(uri) {
     const ext = uri.split('.').pop()?.toLowerCase();
     const map = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
