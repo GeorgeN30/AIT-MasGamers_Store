@@ -44,7 +44,7 @@ export default function LoginScreen({ navigation, route }) {
             <Text style={styles.logoText}>MG</Text>
           </View>
           <Text style={styles.title}>MG Soporte</Text>
-          <Text style={styles.subtitle}>Inicia sesión en tu cuenta</Text>
+          <Text style={styles.subtitle}>Inicia sesion en tu cuenta</Text>
 
           {successMessage ? (
             <View style={styles.successBox}>
@@ -58,7 +58,7 @@ export default function LoginScreen({ navigation, route }) {
             </View>
           ) : null}
 
-          <Text style={styles.label}>Correo electrónico</Text>
+          <Text style={styles.label}>Correo electronico</Text>
           <TextInput
             style={styles.input}
             placeholder="correo@ejemplo.com"
@@ -93,12 +93,12 @@ export default function LoginScreen({ navigation, route }) {
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.buttonText}>Iniciar sesión</Text>
+              <Text style={styles.buttonText}>Iniciar sesion</Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Register')} disabled={isLoading}>
-            <Text style={styles.linkText}>¿No tienes cuenta? Regístrate</Text>
+            <Text style={styles.linkText}>¿No tienes cuenta? Registrate</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

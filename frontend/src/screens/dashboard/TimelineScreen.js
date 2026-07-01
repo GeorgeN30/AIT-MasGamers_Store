@@ -1,9 +1,9 @@
-﻿import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ticketService } from '../../services/ticketService';
 
-const ESTADOS_ORDER = ['Recibido', 'En diagn├│stico', 'En reparaci├│n', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
+const ESTADOS_ORDER = ['Recibido', 'En diagnostico', 'En reparacion', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
 
 export default function TimelineScreen({ navigation }) {
   const [tickets, setTickets] = useState([]);
@@ -65,7 +65,7 @@ export default function TimelineScreen({ navigation }) {
         </>
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>ÔÅ│</Text>
+          <Text style={styles.emptyIcon}></Text>
           <Text style={styles.emptyTitle}>Sin seguimiento</Text>
           <Text style={styles.emptyDesc}>Crea un ticket para ver su progreso</Text>
         </View>

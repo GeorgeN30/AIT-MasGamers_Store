@@ -40,7 +40,7 @@ export default function MediaScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Gestión Multimedia</Text>
+      <Text style={styles.title}>Gestion Multimedia</Text>
 
       <TouchableOpacity
         style={[styles.button, uploading && styles.buttonDisabled]}
@@ -48,7 +48,7 @@ export default function MediaScreen() {
         disabled={uploading}
       >
         <Text style={styles.buttonText}>
-          {uploading ? 'Subiendo...' : '📷 Seleccionar Imagen'}
+          {uploading ? 'Subiendo...' : ' Seleccionar Imagen'}
         </Text>
       </TouchableOpacity>
 
