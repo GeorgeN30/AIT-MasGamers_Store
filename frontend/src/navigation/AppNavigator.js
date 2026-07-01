@@ -65,7 +65,7 @@ function BottomTabs() {
             iconName = 'time';
           } else if (route.name === 'Historial') {
             iconName = 'stats-chart';
-          } else if (route.name === 'Perfil') { // NUEVO ÍCONO
+          } else if (route.name === 'Perfil') { // NUEVO ICONO
             iconName = 'person';
           }
 

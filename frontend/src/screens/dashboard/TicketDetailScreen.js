@@ -1,10 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Linking, TextInput, Modal } from 'react-native';
 import { Audio } from 'expo-av';
 import { ticketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config';
 
-const ESTADOS = ['Recibido', 'En diagn├│stico', 'En reparaci├│n', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
+const ESTADOS = ['Recibido', 'En diagnostico', 'En reparacion', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
 
 export default function TicketDetailScreen({ route, navigation }) {
   const { ticketId } = route.params || {};
@@ -110,7 +111,7 @@ export default function TicketDetailScreen({ route, navigation }) {
   };
 
   const playAudio = async () => {
-    if (!ticket?.audioUri) return;
+    if (!audioFullUrl) return;
     try {
       if (sound) {
         await sound.unloadAsync();
@@ -119,7 +120,7 @@ export default function TicketDetailScreen({ route, navigation }) {
         return;
       }
       const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: ticket.audioUri },
+        { uri: audioFullUrl },
         { shouldPlay: true }
       );
       setSound(newSound);
@@ -153,18 +154,14 @@ export default function TicketDetailScreen({ route, navigation }) {
     );
   }
 
-  const baseUrl = ticket.imageUri || ticket.audioUri
-    ? ticket.imageUri?.startsWith('/uploads')
-      ? `http://localhost:3000${ticket.imageUri}`
-      : ticket.imageUri
-    : null;
+  const mediaBaseUrl = API_BASE_URL.replace(/\/api$/, '');
 
   const imageFullUrl = ticket.imageUri?.startsWith('/uploads')
-    ? `http://localhost:3000${ticket.imageUri}`
+    ? `${mediaBaseUrl}${ticket.imageUri}`
     : ticket.imageUri;
 
   const audioFullUrl = ticket.audioUri?.startsWith('/uploads')
-    ? `http://localhost:3000${ticket.audioUri}`
+    ? `${mediaBaseUrl}${ticket.audioUri}`
     : ticket.audioUri;
 
   return (
@@ -207,23 +204,23 @@ export default function TicketDetailScreen({ route, navigation }) {
           style={styles.mediaCard}
           onPress={() => Linking.openURL(`https://maps.google.com/maps?q=${ticket.latitude},${ticket.longitude}`)}
         >
-          <Text style={styles.mediaText}>­ƒôì Ubicaci├│n: {ticket.latitude.toFixed(4)}, {ticket.longitude.toFixed(4)}</Text>
+          <Text style={styles.mediaText}> Ubicacion: {ticket.latitude.toFixed(4)}, {ticket.longitude.toFixed(4)}</Text>
         </TouchableOpacity>
       )}
 
       {imageFullUrl && (
         <View style={styles.mediaCard}>
-          <Text style={styles.sectionTitle}>­ƒôÀ Evidencia</Text>
+          <Text style={styles.sectionTitle}> Evidencia</Text>
           <Image source={{ uri: imageFullUrl }} style={styles.imagePreview} resizeMode="contain" />
         </View>
       )}
 
       {audioFullUrl && (
         <View style={styles.mediaCard}>
-          <Text style={styles.sectionTitle}>­ƒÄñ Nota de Voz</Text>
+          <Text style={styles.sectionTitle}> Nota de Voz</Text>
           <TouchableOpacity style={styles.audioButton} onPress={playAudio}>
             <Text style={styles.audioButtonText}>
-              {playing ? 'ÔÅ╣ Detener' : 'ÔûÂ Reproducir'}
+              {playing ? ' Detener' : ' Reproducir'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -314,11 +311,11 @@ export default function TicketDetailScreen({ route, navigation }) {
           <View style={styles.logDot} />
           <View style={styles.logContent}>
             <Text style={styles.logText}>
-              {log.estado_anterior ? `${log.estado_anterior} → ${log.estado_nuevo}` : log.estado_nuevo}
+              {log.estado_anterior ? `${log.estado_anterior} -> ${log.estado_nuevo}` : log.estado_nuevo}
             </Text>
-            {log.nota ? <Text style={styles.logNota}>📝 {log.nota}</Text> : null}
+            {log.nota ? <Text style={styles.logNota}> {log.nota}</Text> : null}
             <Text style={styles.logMeta}>
-              {log.changedByName} · {log.created_at?.substring(0, 10)}
+              {log.changedByName} - {log.created_at?.substring(0, 10)}
             </Text>
           </View>
         </View>

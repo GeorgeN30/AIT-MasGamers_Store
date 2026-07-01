@@ -38,8 +38,8 @@ export default function RegisterScreen({ navigation }) {
         password,
         securityWord: securityWord.trim(),
       });
-      // Al registrarse, vuelve al Login con mensaje de éxito
-      navigation.navigate('Login', { successMessage: '¡Cuenta creada! Ya puedes iniciar sesión.' });
+      // Al registrarse, vuelve al Login con mensaje de exito
+      navigation.navigate('Login', { successMessage: '¡Cuenta creada! Ya puedes iniciar sesion.' });
     } catch (e) {
       setError(e.message);
     }
@@ -73,7 +73,7 @@ export default function RegisterScreen({ navigation }) {
             editable={!isLoading}
           />
 
-          <Text style={styles.label}>Correo electrónico</Text>
+          <Text style={styles.label}>Correo electronico</Text>
           <TextInput
             style={styles.input}
             placeholder="correo@ejemplo.com"
@@ -88,7 +88,7 @@ export default function RegisterScreen({ navigation }) {
           <Text style={styles.label}>Contraseña</Text>
           <TextInput
             style={styles.input}
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Minimo 6 caracteres"
             placeholderTextColor="#A0A0A0"
             secureTextEntry
             value={password}
@@ -98,7 +98,7 @@ export default function RegisterScreen({ navigation }) {
 
           <Text style={styles.label}>Palabra de seguridad</Text>
           <Text style={styles.hint}>
-            Úsala si olvidas tu contraseña (ej: nombre de tu mascota, ciudad favorita)
+            Usala si olvidas tu contraseña (ej: nombre de tu mascota, ciudad favorita)
           </Text>
           <TextInput
             style={styles.input}
@@ -123,7 +123,7 @@ export default function RegisterScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={isLoading}>
-            <Text style={styles.linkText}>¿Ya tienes cuenta? Inicia sesión</Text>
+            <Text style={styles.linkText}>¿Ya tienes cuenta? Inicia sesion</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

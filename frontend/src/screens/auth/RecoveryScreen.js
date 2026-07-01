@@ -59,7 +59,7 @@ export default function RecoveryScreen({ navigation }) {
     setError('');
     try {
       await resetPassword(email.trim(), securityWord.trim(), newPassword);
-      navigation.navigate('Login', { successMessage: '¡Contraseña actualizada! Ya puedes iniciar sesión.' });
+      navigation.navigate('Login', { successMessage: '¡Contraseña actualizada! Ya puedes iniciar sesion.' });
     } catch (e) {
       setError(e.message);
     }
@@ -98,7 +98,7 @@ export default function RecoveryScreen({ navigation }) {
                 Ingresa tu correo y la palabra de seguridad que usaste al registrarte.
               </Text>
 
-              <Text style={styles.label}>Correo electrónico</Text>
+              <Text style={styles.label}>Correo electronico</Text>
               <TextInput
                 style={styles.input}
                 placeholder="correo@ejemplo.com"
@@ -145,7 +145,7 @@ export default function RecoveryScreen({ navigation }) {
               <Text style={styles.label}>Nueva contraseña</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Minimo 6 caracteres"
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry
                 value={newPassword}
@@ -179,7 +179,7 @@ export default function RecoveryScreen({ navigation }) {
           )}
 
           <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={isLoading}>
-            <Text style={styles.linkText}>← Volver al inicio de sesión</Text>
+            <Text style={styles.linkText}>← Volver al inicio de sesion</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

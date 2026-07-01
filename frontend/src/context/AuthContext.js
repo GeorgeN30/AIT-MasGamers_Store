@@ -1,6 +1,6 @@
 /**
- * Contexto global de autenticación.
- * Restaura la sesión desde localStorage al iniciar; AppNavigator
+ * Contexto global de autenticacion.
+ * Restaura la sesion desde localStorage al iniciar; AppNavigator
  * reacciona a isAuthenticated e isInitializing.
  */
 

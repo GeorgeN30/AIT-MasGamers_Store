@@ -7,8 +7,8 @@ export const tickets = [
     estado: 0,
     historial: [
       'Equipo recibido',
-      'En diagnóstico',
-      'Garantía aprobada',
+      'En diagnostico',
+      'Garantia aprobada',
       'Enviado al cliente',
     ],
     fallas: 12,
@@ -21,8 +21,8 @@ export const tickets = [
     estado: 2,
     historial: [
       'Equipo recibido',
-      'En diagnóstico',
-      'Garantía aprobada',
+      'En diagnostico',
+      'Garantia aprobada',
       'Enviado al cliente',
     ],
     fallas: 8,
@@ -35,8 +35,8 @@ export const tickets = [
     estado: 1,
     historial: [
       'Equipo recibido',
-      'En diagnóstico',
-      'Garantía aprobada',
+      'En diagnostico',
+      'Garantia aprobada',
       'Enviado al cliente',
     ],
     fallas: 5,
