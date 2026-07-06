@@ -81,7 +81,7 @@ export default function LoginScreen({ navigation, route }) {
             editable={!isLoading}
           />
 
-          <TouchableOpacity onPress={() => navigation.navigate('Recovery')} disabled={isLoading}>
+          <TouchableOpacity onPress={() => navigation.navigate('Recovery', { email: email.trim() })} disabled={isLoading}>
             <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
 

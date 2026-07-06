@@ -9,12 +9,20 @@ export const authService = {
     return api.post('/auth/register', userData);
   },
 
-  verifySecurityWord(email, securityWord) {
-    return api.post('/auth/verify-security', { email, securityWord });
+  forgotPassword(email) {
+    return api.post('/auth/forgot-password', { email });
   },
 
-  resetPassword(email, securityWord, newPassword) {
-    return api.post('/auth/reset-password', { email, securityWord, newPassword });
+  verifyOtp(email, codigo) {
+    return api.post('/auth/verify-otp', { email, codigo });
+  },
+
+  resetPassword(email, newPassword, resetToken) {
+    return api.post('/auth/reset-password', { email, newPassword, resetToken });
+  },
+
+  resendOtp(email) {
+    return api.post('/auth/resend-otp', { email });
   },
 
   getProfile() {
