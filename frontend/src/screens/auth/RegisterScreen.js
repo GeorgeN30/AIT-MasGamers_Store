@@ -16,13 +16,12 @@ export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [securityWord, setSecurityWord] = useState('');
   const [error, setError] = useState('');
 
   const { register, isLoading } = useAuth();
 
   const handleRegister = async () => {
-    if (!name.trim() || !email.trim() || !password.trim() || !securityWord.trim()) {
+    if (!name.trim() || !email.trim() || !password.trim()) {
       setError('Por favor completa todos los campos');
       return;
     }
@@ -36,10 +35,9 @@ export default function RegisterScreen({ navigation }) {
         name: name.trim(),
         email: email.trim(),
         password,
-        securityWord: securityWord.trim(),
       });
-      // Al registrarse, vuelve al Login con mensaje de éxito
-      navigation.navigate('Login', { successMessage: '¡Cuenta creada! Ya puedes iniciar sesión.' });
+      // Al registrarse, vuelve al Login con mensaje de exito
+      navigation.navigate('Login', { successMessage: '¡Cuenta creada! Ya puedes iniciar sesion.' });
     } catch (e) {
       setError(e.message);
     }
@@ -73,7 +71,7 @@ export default function RegisterScreen({ navigation }) {
             editable={!isLoading}
           />
 
-          <Text style={styles.label}>Correo electrónico</Text>
+          <Text style={styles.label}>Correo electronico</Text>
           <TextInput
             style={styles.input}
             placeholder="correo@ejemplo.com"
@@ -88,25 +86,11 @@ export default function RegisterScreen({ navigation }) {
           <Text style={styles.label}>Contraseña</Text>
           <TextInput
             style={styles.input}
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Minimo 6 caracteres"
             placeholderTextColor="#A0A0A0"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
-            editable={!isLoading}
-          />
-
-          <Text style={styles.label}>Palabra de seguridad</Text>
-          <Text style={styles.hint}>
-            Úsala si olvidas tu contraseña (ej: nombre de tu mascota, ciudad favorita)
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Tu palabra secreta"
-            placeholderTextColor="#A0A0A0"
-            value={securityWord}
-            onChangeText={setSecurityWord}
-            autoCapitalize="none"
             editable={!isLoading}
           />
 
@@ -123,7 +107,7 @@ export default function RegisterScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={isLoading}>
-            <Text style={styles.linkText}>¿Ya tienes cuenta? Inicia sesión</Text>
+            <Text style={styles.linkText}>¿Ya tienes cuenta? Inicia sesion</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -150,7 +134,6 @@ const styles = StyleSheet.create({
   errorBox: { backgroundColor: '#FFF5F5', borderWidth: 1, borderColor: '#FC8181', borderRadius: 6, padding: 10, marginBottom: 16 },
   errorText: { color: '#C53030', fontSize: 13, textAlign: 'center' },
   label: { fontSize: 14, color: '#4A5568', marginBottom: 4, fontWeight: '500' },
-  hint: { fontSize: 12, color: '#A0AEC0', marginBottom: 8, fontStyle: 'italic' },
   input: {
     width: '100%', height: 46, borderWidth: 1, borderColor: '#CBD5E0',
     borderRadius: 6, paddingHorizontal: 12, marginBottom: 16,

@@ -32,7 +32,7 @@ export default function ProfileScreen() {
 
   const handleSave = async () => {
     if (editName.trim() === '') {
-      Alert.alert('Error', 'El nombre no puede estar vacío');
+      Alert.alert('Error', 'El nombre no puede estar vacio');
       return;
     }
     setSaving(true);

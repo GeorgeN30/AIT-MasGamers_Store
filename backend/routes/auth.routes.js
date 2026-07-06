@@ -4,15 +4,16 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { prepare } = require('../db');
 const { verifyToken } = require('../middleware/auth');
+const { generateOtp, verifyOtp, resendOtp } = require('../services/notifyService');
 require('dotenv').config();
 
 const router = express.Router();
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, securityWord } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!name || !email || !password || !securityWord) {
+    if (!name || !email || !password) {
       return res.status(400).json({ message: 'Todos los campos son obligatorios' });
     }
 
@@ -27,12 +28,11 @@ router.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const hashedSecurityWord = await bcrypt.hash(securityWord.toLowerCase(), 10);
 
     const id = uuidv4();
     prepare(
       'INSERT INTO users (id, name, email, password, securityWord, role) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run([id, name.trim(), email.toLowerCase(), hashedPassword, hashedSecurityWord, 'user']);
+    ).run([id, name.trim(), email.toLowerCase(), hashedPassword, '', 'user']);
 
     res.status(201).json({ message: 'Cuenta creada exitosamente' });
   } catch (err) {
@@ -85,37 +85,70 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/verify-security', async (req, res) => {
+router.post('/forgot-password', async (req, res) => {
   try {
-    const { email, securityWord } = req.body;
+    const { email } = req.body;
 
-    if (!email || !securityWord) {
-      return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+    if (!email) {
+      return res.status(400).json({ message: 'El correo es obligatorio' });
     }
 
-    const user = prepare('SELECT * FROM users WHERE email = ?').get([email.toLowerCase()]);
+    const user = prepare('SELECT id, email FROM users WHERE email = ?').get([email.toLowerCase()]);
 
     if (!user) {
-      return res.status(401).json({ message: 'Correo o palabra de seguridad incorrectos' });
+      return res.status(404).json({ message: 'No existe una cuenta con este correo' });
     }
 
-    const validWord = await bcrypt.compare(securityWord.toLowerCase(), user.securityWord);
-    if (!validWord) {
-      return res.status(401).json({ message: 'Correo o palabra de seguridad incorrectos' });
-    }
+    await generateOtp(email.toLowerCase());
 
-    res.json({ message: 'Identidad verificada' });
+    res.json({ message: 'Código de recuperación enviado a tu correo' });
   } catch (err) {
-    console.error('Verify security error:', err);
-    res.status(500).json({ message: 'Error del servidor' });
+    console.error('Forgot password error:', err);
+    if (err.response) {
+      const status = err.response.status;
+      if (status === 401) return res.status(500).json({ message: 'Error de autenticación con el servicio de correo' });
+      if (status === 429) return res.status(429).json({ message: 'Demasiados intentos. Intenta de nuevo en una hora.' });
+    }
+    res.status(500).json({ message: 'Error al enviar el código de recuperación' });
+  }
+});
+
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, codigo } = req.body;
+
+    if (!email || !codigo) {
+      return res.status(400).json({ message: 'Correo y código son obligatorios' });
+    }
+
+    const result = await verifyOtp(email.toLowerCase(), codigo);
+
+    if (!result.valido) {
+      return res.status(400).json({ message: 'Código inválido' });
+    }
+
+    const resetToken = jwt.sign(
+      { email: email.toLowerCase(), purpose: 'password-reset' },
+      process.env.JWT_SECRET,
+      { expiresIn: '5m' }
+    );
+
+    res.json({ message: 'Código válido', resetToken });
+  } catch (err) {
+    console.error('Verify OTP error:', err);
+    if (err.response) {
+      const status = err.response.status;
+      if (status === 404) return res.status(400).json({ message: 'Código inválido o expirado' });
+    }
+    res.status(500).json({ message: 'Error al verificar el código' });
   }
 });
 
 router.post('/reset-password', async (req, res) => {
   try {
-    const { email, securityWord, newPassword } = req.body;
+    const { email, newPassword, resetToken } = req.body;
 
-    if (!email || !securityWord || !newPassword) {
+    if (!email || !newPassword || !resetToken) {
       return res.status(400).json({ message: 'Todos los campos son obligatorios' });
     }
 
@@ -123,15 +156,15 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
     }
 
-    const user = prepare('SELECT * FROM users WHERE email = ?').get([email.toLowerCase()]);
-
-    if (!user) {
-      return res.status(401).json({ message: 'No se pudo verificar la identidad' });
+    let decoded;
+    try {
+      decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: 'Token inválido o expirado. Solicita un nuevo código.' });
     }
 
-    const validWord = await bcrypt.compare(securityWord.toLowerCase(), user.securityWord);
-    if (!validWord) {
-      return res.status(401).json({ message: 'No se pudo verificar la identidad' });
+    if (decoded.purpose !== 'password-reset' || decoded.email !== email.toLowerCase()) {
+      return res.status(401).json({ message: 'Token inválido para este correo' });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -141,6 +174,32 @@ router.post('/reset-password', async (req, res) => {
   } catch (err) {
     console.error('Reset password error:', err);
     res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
+router.post('/resend-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'El correo es obligatorio' });
+    }
+
+    const user = prepare('SELECT id FROM users WHERE email = ?').get([email.toLowerCase()]);
+
+    if (!user) {
+      return res.status(404).json({ message: 'No existe una cuenta con este correo' });
+    }
+
+    await resendOtp(email.toLowerCase());
+
+    res.json({ message: 'Código reenviado a tu correo' });
+  } catch (err) {
+    console.error('Resend OTP error:', err);
+    if (err.response && err.response.status === 404) {
+      return res.status(400).json({ message: 'No hay un código activo. Solicita uno nuevo.' });
+    }
+    res.status(500).json({ message: 'Error al reenviar el código' });
   }
 });
 

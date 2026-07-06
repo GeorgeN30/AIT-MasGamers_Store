@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
@@ -9,7 +9,7 @@ export default function NewTicketScreen({ navigation }) {
   const [equipo, setEquipo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [imageUri, setImageUri] = useState(null);
-  const [categoria, setCategoria] = useState('Soporte T├®cnico');
+  const [categoria, setCategoria] = useState('Soporte Tecnico');
   const [location, setLocation] = useState(null);
   const [audioUri, setAudioUri] = useState(null);
   const [recording, setRecording] = useState(null);
@@ -19,7 +19,7 @@ export default function NewTicketScreen({ navigation }) {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permiso denegado', 'Necesitamos acceso a tu galer├¡a.');
+      Alert.alert('Permiso denegado', 'Necesitamos acceso a tu galeria.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -37,9 +37,9 @@ export default function NewTicketScreen({ navigation }) {
     const loc = await locationService.getCurrentPosition();
     if (loc) {
       setLocation(loc);
-      Alert.alert('Ubicaci├│n', 'Ubicaci├│n agregada correctamente');
+      Alert.alert('Ubicacion', 'Ubicacion agregada correctamente');
     } else {
-      Alert.alert('Error', 'No se pudo obtener la ubicaci├│n');
+      Alert.alert('Error', 'No se pudo obtener la ubicacion');
     }
   };
 
@@ -47,7 +47,7 @@ export default function NewTicketScreen({ navigation }) {
     try {
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
-        Alert.alert('Permiso denegado', 'Necesitamos acceso al micr├│fono.');
+        Alert.alert('Permiso denegado', 'Necesitamos acceso al microfono.');
         return;
       }
       await Audio.setAudioModeAsync({
@@ -60,7 +60,7 @@ export default function NewTicketScreen({ navigation }) {
       setRecording(recording);
       setIsRecording(true);
     } catch (e) {
-      Alert.alert('Error', 'No se pudo iniciar la grabaci├│n');
+      Alert.alert('Error', 'No se pudo iniciar la grabacion');
     }
   };
 
@@ -75,7 +75,7 @@ export default function NewTicketScreen({ navigation }) {
 
   const submitTicket = async () => {
     if (!equipo.trim() || !descripcion.trim()) {
-      Alert.alert('Campos vac├¡os', 'Ingresa el equipo y el detalle de la falla.');
+      Alert.alert('Campos vacios', 'Ingresa el equipo y el detalle de la falla.');
       return;
     }
 
@@ -111,7 +111,7 @@ export default function NewTicketScreen({ navigation }) {
         longitude: location?.longitude || null,
       });
 
-      Alert.alert('├ëxito', 'Ticket creado correctamente');
+      Alert.alert('Exito', 'Ticket creado correctamente');
       navigation.goBack();
     } catch (e) {
       Alert.alert('Error', e.message);
@@ -122,14 +122,14 @@ export default function NewTicketScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.label}>Categor├¡a:</Text>
+      <Text style={styles.label}>Categoria:</Text>
       <View style={styles.categoryContainer}>
         <TouchableOpacity
-          style={[styles.categoryBtn, categoria === 'Soporte T├®cnico' && styles.categoryBtnActive]}
-          onPress={() => setCategoria('Soporte T├®cnico')}
+          style={[styles.categoryBtn, categoria === 'Soporte Tecnico' && styles.categoryBtnActive]}
+          onPress={() => setCategoria('Soporte Tecnico')}
         >
-          <Text style={[styles.categoryText, categoria === 'Soporte T├®cnico' && styles.categoryTextActive]}>
-            Soporte T├®cnico
+          <Text style={[styles.categoryText, categoria === 'Soporte Tecnico' && styles.categoryTextActive]}>
+            Soporte Tecnico
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -137,7 +137,7 @@ export default function NewTicketScreen({ navigation }) {
           onPress={() => setCategoria('Ventas')}
         >
           <Text style={[styles.categoryText, categoria === 'Ventas' && styles.categoryTextActive]}>
-            Ventas / Atenci├│n
+            Ventas / Atencion
           </Text>
         </TouchableOpacity>
       </View>
@@ -145,16 +145,16 @@ export default function NewTicketScreen({ navigation }) {
       <Text style={styles.label}>Equipo / Componente:</Text>
       <TextInput
         style={styles.input}
-        placeholder={categoria === 'Soporte T├®cnico' ? "Ej: Teclado Mec├ínico, GPU..." : "Ej: Pedido #1234, Factura..."}
+        placeholder={categoria === 'Soporte Tecnico' ? "Ej: Teclado Mecanico, GPU..." : "Ej: Pedido #1234, Factura..."}
         placeholderTextColor="#999"
         value={equipo}
         onChangeText={setEquipo}
       />
 
-      <Text style={styles.label}>Descripci├│n del problema:</Text>
+      <Text style={styles.label}>Descripcion del problema:</Text>
       <TextInput
         style={[styles.input, styles.textArea]}
-        placeholder={categoria === 'Soporte T├®cnico' ? "Describe la falla..." : "Explica tu problema..."}
+        placeholder={categoria === 'Soporte Tecnico' ? "Describe la falla..." : "Explica tu problema..."}
         placeholderTextColor="#999"
         multiline
         numberOfLines={4}
@@ -164,14 +164,14 @@ export default function NewTicketScreen({ navigation }) {
 
       <TouchableOpacity style={styles.sensorButton} onPress={pickImage}>
         <Text style={styles.sensorButtonText}>
-          {imageUri ? '­ƒôÀ Cambiar Foto' : '­ƒôÀ Adjuntar Foto'}
+          {imageUri ? ' Cambiar Foto' : ' Adjuntar Foto'}
         </Text>
       </TouchableOpacity>
       {imageUri && <Image source={{ uri: imageUri }} style={styles.imagePreview} resizeMode="cover" />}
 
       <TouchableOpacity style={styles.sensorButton} onPress={getLocation}>
         <Text style={styles.sensorButtonText}>
-          {location ? '­ƒôì Ubicaci├│n agregada' : '­ƒôì Agregar Ubicaci├│n GPS'}
+          {location ? ' Ubicacion agregada' : ' Agregar Ubicacion GPS'}
         </Text>
       </TouchableOpacity>
 
@@ -180,7 +180,7 @@ export default function NewTicketScreen({ navigation }) {
         onPress={isRecording ? stopRecording : startRecording}
       >
         <Text style={styles.sensorButtonText}>
-          {isRecording ? 'ÔÅ╣ Detener Grabaci├│n' : audioUri ? '­ƒÄñ Audio grabado' : '­ƒÄñ Grabar Nota de Voz'}
+          {isRecording ? ' Detener Grabacion' : audioUri ? ' Audio grabado' : ' Grabar Nota de Voz'}
         </Text>
       </TouchableOpacity>
 

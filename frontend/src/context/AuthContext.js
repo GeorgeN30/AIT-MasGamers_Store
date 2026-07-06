@@ -1,6 +1,6 @@
 /**
- * Contexto global de autenticación.
- * Restaura la sesión desde localStorage al iniciar; AppNavigator
+ * Contexto global de autenticacion.
+ * Restaura la sesion desde localStorage al iniciar; AppNavigator
  * reacciona a isAuthenticated e isInitializing.
  */
 
@@ -64,19 +64,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const verifySecurityWord = async (email, securityWord) => {
+  const forgotPassword = async (email) => {
     setIsLoading(true);
     try {
-      return await authService.verifySecurityWord(email, securityWord);
+      return await authService.forgotPassword(email);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const resetPassword = async (email, securityWord, newPassword) => {
+  const verifyOtp = async (email, codigo) => {
     setIsLoading(true);
     try {
-      return await authService.resetPassword(email, securityWord, newPassword);
+      return await authService.verifyOtp(email, codigo);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email, newPassword, resetToken) => {
+    setIsLoading(true);
+    try {
+      return await authService.resetPassword(email, newPassword, resetToken);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendOtp = async (email) => {
+    setIsLoading(true);
+    try {
+      return await authService.resendOtp(email);
     } finally {
       setIsLoading(false);
     }
@@ -120,8 +138,10 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     login,
     register,
-    verifySecurityWord,
+    forgotPassword,
+    verifyOtp,
     resetPassword,
+    resendOtp,
     updateProfile,
     changePassword,
     logout,

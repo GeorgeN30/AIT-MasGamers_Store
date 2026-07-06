@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ticketService } from '../../services/ticketService';
@@ -45,9 +45,9 @@ export default function HistoryScreen({ navigation }) {
 
   const getMediaIcons = (ticket) => {
     const icons = [];
-    if (ticket.imageUri) icons.push('📷');
-    if (ticket.audioUri) icons.push('🎤');
-    if (ticket.latitude && ticket.longitude) icons.push('📍');
+    if (ticket.imageUri) icons.push('');
+    if (ticket.audioUri) icons.push('');
+    if (ticket.latitude && ticket.longitude) icons.push('');
     return icons;
   };
 
@@ -151,7 +151,7 @@ export default function HistoryScreen({ navigation }) {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📋</Text>
+          <Text style={styles.emptyIcon}></Text>
           <Text style={styles.emptyTitle}>Sin tickets</Text>
           <Text style={styles.emptyDesc}>No se encontraron tickets con esos filtros.</Text>
         </View>

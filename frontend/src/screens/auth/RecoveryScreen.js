@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,40 +12,88 @@ import {
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
-/**
- * RecoveryScreen — Flujo en 2 pasos:
- * Paso 1: Usuario ingresa su correo y palabra de seguridad → se verifica
- * Paso 2: Si coincide, puede escribir su nueva contraseña
- */
-export default function RecoveryScreen({ navigation }) {
-  const [step, setStep] = useState(1); // 1 = verificar, 2 = nueva contraseña
-  const [email, setEmail] = useState('');
-  const [securityWord, setSecurityWord] = useState('');
+const OTP_LENGTH = 6;
+const RESEND_COOLDOWN = 60;
+
+export default function RecoveryScreen({ navigation, route }) {
+  const initialEmail = route?.params?.email || '';
+  const [step, setStep] = useState(1);
+  const [email] = useState(initialEmail);
+  const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [resetToken, setResetToken] = useState(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
-  const { verifySecurityWord, resetPassword, isLoading } = useAuth();
+  const { forgotPassword, verifyOtp, resetPassword, resendOtp, isLoading } = useAuth();
+  const otpRef = useRef(null);
+  const cooldownRef = useRef(null);
 
-  // PASO 1: Verificar correo + palabra de seguridad
-  const handleVerify = async () => {
-    if (!email.trim() || !securityWord.trim()) {
-      setError('Por favor completa todos los campos');
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
+
+  const startResendCooldown = () => {
+    setResendCooldown(RESEND_COOLDOWN);
+    cooldownRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleSendOtp = async () => {
+    if (!email.trim()) {
+      setError('Ingresa tu correo electronico');
       return;
     }
     setError('');
     try {
-      await verifySecurityWord(email.trim(), securityWord.trim());
-      setStep(2); // Verificado → avanza al paso 2
+      await forgotPassword(email.trim());
+      setStep(2);
+      startResendCooldown();
+      setTimeout(() => otpRef.current?.focus(), 300);
     } catch (e) {
       setError(e.message);
     }
   };
 
-  // PASO 2: Cambiar contraseña
+  const handleVerifyOtp = async () => {
+    if (otp.length !== OTP_LENGTH) {
+      setError('Ingresa el codigo completo de 6 digitos');
+      return;
+    }
+    setError('');
+    try {
+      const result = await verifyOtp(email.trim(), otp);
+      setResetToken(result.resetToken);
+      setStep(3);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendCooldown > 0) return;
+    setError('');
+    try {
+      await resendOtp(email.trim());
+      startResendCooldown();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   const handleReset = async () => {
     if (!newPassword.trim() || !confirmPassword.trim()) {
-      setError('Por favor completa todos los campos');
+      setError('Completa todos los campos');
       return;
     }
     if (newPassword.length < 6) {
@@ -58,11 +106,16 @@ export default function RecoveryScreen({ navigation }) {
     }
     setError('');
     try {
-      await resetPassword(email.trim(), securityWord.trim(), newPassword);
-      navigation.navigate('Login', { successMessage: '¡Contraseña actualizada! Ya puedes iniciar sesión.' });
+      await resetPassword(email.trim(), newPassword, resetToken);
+      navigation.navigate('Login', { successMessage: '¡Contraseña actualizada! Ya puedes iniciar sesion.' });
     } catch (e) {
       setError(e.message);
     }
+  };
+
+  const handleOtpChange = (text) => {
+    const digits = text.replace(/[^0-9]/g, '').slice(0, OTP_LENGTH);
+    setOtp(digits);
   };
 
   return (
@@ -72,17 +125,17 @@ export default function RecoveryScreen({ navigation }) {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
-
           <Text style={styles.title}>Recuperar contraseña</Text>
 
-          {/* Indicador de paso */}
           <View style={styles.stepIndicator}>
             <View style={[styles.stepDot, step >= 1 && styles.stepDotActive]} />
-            <View style={styles.stepLine} />
+            <View style={[styles.stepLine, step >= 2 && styles.stepLineActive]} />
             <View style={[styles.stepDot, step >= 2 && styles.stepDotActive]} />
+            <View style={[styles.stepLine, step >= 3 && styles.stepLineActive]} />
+            <View style={[styles.stepDot, step >= 3 && styles.stepDotActive]} />
           </View>
           <Text style={styles.stepLabel}>
-            {step === 1 ? 'Paso 1: Verificar identidad' : 'Paso 2: Nueva contraseña'}
+            {step === 1 ? 'Paso 1: Verificar correo' : step === 2 ? 'Paso 2: Codigo de verificacion' : 'Paso 3: Nueva contraseña'}
           </Text>
 
           {error ? (
@@ -91,61 +144,101 @@ export default function RecoveryScreen({ navigation }) {
             </View>
           ) : null}
 
-          {/* PASO 1 */}
           {step === 1 && (
             <>
               <Text style={styles.description}>
-                Ingresa tu correo y la palabra de seguridad que usaste al registrarte.
+                Te enviaremos un codigo de verificacion a tu correo electronico.
               </Text>
 
-              <Text style={styles.label}>Correo electrónico</Text>
+              <Text style={styles.label}>Correo electronico</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, styles.inputReadOnly]}
                 placeholder="correo@ejemplo.com"
                 placeholderTextColor="#A0A0A0"
                 value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={!isLoading}
-              />
-
-              <Text style={styles.label}>Palabra de seguridad</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Tu palabra secreta"
-                placeholderTextColor="#A0A0A0"
-                value={securityWord}
-                onChangeText={setSecurityWord}
-                autoCapitalize="none"
-                editable={!isLoading}
+                editable={false}
               />
 
               <TouchableOpacity
                 style={[styles.button, isLoading && styles.buttonDisabled]}
-                onPress={handleVerify}
+                onPress={handleSendOtp}
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.buttonText}>Verificar identidad</Text>
+                  <Text style={styles.buttonText}>Enviar codigo OTP</Text>
                 )}
               </TouchableOpacity>
             </>
           )}
 
-          {/* PASO 2 */}
           {step === 2 && (
             <>
               <Text style={styles.description}>
-                Identidad verificada ✓ Escribe tu nueva contraseña.
+                Ingresa el codigo de 6 digitos enviado a{'\n'}
+                <Text style={styles.emailHighlight}>{email}</Text>
+              </Text>
+
+              <Text style={styles.label}>Codigo de verificacion</Text>
+              <View style={styles.otpRow}>
+                {Array.from({ length: OTP_LENGTH }).map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.otpBox,
+                      otp.length === i && styles.otpBoxFocused,
+                    ]}
+                  >
+                    <Text style={styles.otpDigit}>{otp[i] || ''}</Text>
+                  </View>
+                ))}
+              </View>
+              <TextInput
+                ref={otpRef}
+                style={styles.otpHiddenInput}
+                value={otp}
+                onChangeText={handleOtpChange}
+                keyboardType="number-pad"
+                maxLength={OTP_LENGTH}
+                editable={!isLoading}
+              />
+
+              <TouchableOpacity
+                style={[styles.button, isLoading && styles.buttonDisabled]}
+                onPress={handleVerifyOtp}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.buttonText}>Verificar codigo</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleResend}
+                disabled={isLoading || resendCooldown > 0}
+              >
+                <Text style={[styles.resendText, resendCooldown > 0 && styles.resendTextDisabled]}>
+                  {resendCooldown > 0
+                    ? `Reenviar codigo en ${resendCooldown}s`
+                    : 'Reenviar codigo'}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <Text style={styles.description}>
+                Identidad verificada. Escribe tu nueva contraseña.
               </Text>
 
               <Text style={styles.label}>Nueva contraseña</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Minimo 6 caracteres"
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry
                 value={newPassword}
@@ -179,7 +272,7 @@ export default function RecoveryScreen({ navigation }) {
           )}
 
           <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={isLoading}>
-            <Text style={styles.linkText}>← Volver al inicio de sesión</Text>
+            <Text style={styles.linkText}>← Volver al inicio de sesion</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -203,9 +296,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#CBD5E0', borderWidth: 2, borderColor: '#CBD5E0',
   },
   stepDotActive: { backgroundColor: '#1A202C', borderColor: '#1A202C' },
-  stepLine: { width: 40, height: 2, backgroundColor: '#CBD5E0', marginHorizontal: 6 },
+  stepLine: { width: 30, height: 2, backgroundColor: '#CBD5E0', marginHorizontal: 4 },
+  stepLineActive: { backgroundColor: '#1A202C' },
   stepLabel: { fontSize: 13, color: '#718096', textAlign: 'center', marginBottom: 20 },
   description: { fontSize: 14, color: '#718096', textAlign: 'center', marginBottom: 20, lineHeight: 20 },
+  emailHighlight: { fontWeight: '600', color: '#1A202C' },
   errorBox: { backgroundColor: '#FFF5F5', borderWidth: 1, borderColor: '#FC8181', borderRadius: 6, padding: 10, marginBottom: 16 },
   errorText: { color: '#C53030', fontSize: 13, textAlign: 'center' },
   label: { fontSize: 14, color: '#4A5568', marginBottom: 6, fontWeight: '500' },
@@ -214,11 +309,25 @@ const styles = StyleSheet.create({
     borderRadius: 6, paddingHorizontal: 12, marginBottom: 16,
     backgroundColor: '#FFFFFF', color: '#1A202C', fontSize: 15,
   },
+  inputReadOnly: { backgroundColor: '#EDF2F7', color: '#718096' },
+  otpRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, gap: 6 },
+  otpBox: {
+    width: 44, height: 50, borderWidth: 1.5, borderColor: '#CBD5E0',
+    borderRadius: 8, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#F7FAFC',
+  },
+  otpBoxFocused: { borderColor: '#1A202C', backgroundColor: '#FFFFFF' },
+  otpDigit: { fontSize: 22, fontWeight: 'bold', color: '#1A202C' },
+  otpHiddenInput: {
+    position: 'absolute', width: 1, height: 1, opacity: 0,
+  },
   button: {
     width: '100%', height: 48, backgroundColor: '#1A202C',
     borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  resendText: { color: '#4A5568', textAlign: 'center', textDecorationLine: 'underline', fontSize: 14, marginBottom: 16 },
+  resendTextDisabled: { color: '#A0AEC0', textDecorationLine: 'none' },
   linkText: { color: '#4A5568', textAlign: 'center', textDecorationLine: 'underline', fontSize: 14 },
 });
