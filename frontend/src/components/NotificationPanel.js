@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { ticketService } from '../services/ticketService';
 
 export default function NotificationPanel({ visible, onClose, onNavigate }) {
-  const { user, wsEvent } = useAuth();
+  const { user, wsEvent, refreshUnreadCount } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -32,6 +32,7 @@ export default function NotificationPanel({ visible, onClose, onNavigate }) {
       await ticketService.markNotificationRead(id);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: 1 } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
+      refreshUnreadCount();
     } catch {}
   };
 
@@ -40,6 +41,7 @@ export default function NotificationPanel({ visible, onClose, onNavigate }) {
       await ticketService.markAllNotificationsRead();
       setNotifications(prev => prev.map(n => ({ ...n, read: 1 })));
       setUnreadCount(0);
+      refreshUnreadCount();
     } catch {}
   };
 

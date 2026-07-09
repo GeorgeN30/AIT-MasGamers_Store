@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { prepare } = require('../db');
 const { verifyToken, requireActive } = require('../middleware/auth');
 const { notifyUser, notifyAdmins } = require('../services/gatewayService');
+const { signJwt } = require('../services/cryptoService');
 
 const router = express.Router();
 
@@ -20,13 +21,10 @@ function createNotification(userId, ticketId, type, title, body) {
   return id;
 }
 
-router.get('/ws-token', verifyToken, requireActive, (req, res) => {
+router.get('/ws-token', verifyToken, requireActive, async (req, res) => {
   try {
-    const token = jwt.sign(
-      { sub: req.user.id, app_id: 'MasGamers-movil' },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    const ttl = 24 * 3600;
+    const token = await signJwt(req.user.id, {}, ttl, 'MasGamers-movil');
     res.json({ token });
   } catch (err) {
     console.error('WS token error:', err);
@@ -84,12 +82,13 @@ router.post('/:ticketId/messages', verifyToken, requireActive, (req, res) => {
     const payload = {
       type: 'NEW_MESSAGE',
       data: {
+        id,
         ticketId: req.params.ticketId,
-        messageId: id,
         message: message.trim(),
         userId: req.user.id,
         userName: senderName,
         userRole: req.user.role,
+        created_at: msg.created_at,
       },
     };
 

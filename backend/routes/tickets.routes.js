@@ -107,7 +107,7 @@ router.post('/', verifyToken, requireActive, (req, res) => {
     prepare(
       `INSERT INTO tickets (id, userId, categoria, equipo, descripcion, imageUri, audioUri, latitude, longitude, estado)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run([id, req.user.id, categoria || 'Soporte Técnico', equipo.trim(), descripcion.trim(),
+    ).run([id, req.user.id, categoria || 'Soporte Tecnico', equipo.trim(), descripcion.trim(),
            imageUri || null, audioUri || null, latitude || null, longitude || null, 'Recibido']);
 
     prepare(
@@ -129,7 +129,7 @@ router.post('/', verifyToken, requireActive, (req, res) => {
 router.put('/:id/status', verifyToken, requireActive, requireRole('admin'), (req, res) => {
   try {
     const { estado, nota } = req.body;
-    const validEstados = ['Recibido', 'En diagnóstico', 'En reparación', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
+    const validEstados = ['Recibido', 'En diagnostico', 'En reparacion', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
 
     if (!estado || !validEstados.includes(estado)) {
       return res.status(400).json({ message: 'Estado no válido' });

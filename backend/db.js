@@ -43,7 +43,7 @@ function initTables() {
     CREATE TABLE IF NOT EXISTS tickets (
       id TEXT PRIMARY KEY,
       userId TEXT NOT NULL,
-      categoria TEXT NOT NULL DEFAULT 'Soporte Técnico',
+      categoria TEXT NOT NULL DEFAULT 'Soporte Tecnico',
       equipo TEXT NOT NULL,
       descripcion TEXT NOT NULL,
       imageUri TEXT,
