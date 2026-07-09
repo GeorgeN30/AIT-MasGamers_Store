@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { prepare } = require('../db');
 const { verifyToken, requireActive } = require('../middleware/auth');
 const { requireRole } = require('../middleware/requireRole');
+const { notifyUser, notifyAdmins } = require('../services/gatewayService');
 
 const router = express.Router();
 
@@ -114,6 +115,10 @@ router.post('/', verifyToken, requireActive, (req, res) => {
     ).run([uuidv4(), id, 'Recibido', req.user.id, null]);
 
     const ticket = prepare('SELECT * FROM tickets WHERE id = ?').get([id]);
+
+    const adminIds = prepare('SELECT id FROM users WHERE role = ? AND active = 1').all(['admin']).map(a => a.id);
+    notifyAdmins({ type: 'TICKET_CREATED', data: { ticketId: id, userName: req.user.name } }, adminIds);
+
     res.status(201).json({ message: 'Ticket creado exitosamente', ticket });
   } catch (err) {
     console.error('Create ticket error:', err);
@@ -145,6 +150,16 @@ router.put('/:id/status', verifyToken, requireActive, requireRole('admin'), (req
     ).run([uuidv4(), req.params.id, estadoAnterior, estado, req.user.id, nota || null]);
 
     const updated = prepare('SELECT * FROM tickets WHERE id = ?').get([req.params.id]);
+
+    const ownerId = ticket.userId;
+    const notifId = uuidv4();
+    prepare(
+      'INSERT INTO notifications (id, userId, ticketId, type, title, body) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run([notifId, ownerId, req.params.id, 'status_change',
+      'Ticket actualizado',
+      `Estado cambiado de "${estadoAnterior}" a "${estado}"`]);
+    notifyUser(ownerId, { type: 'STATUS_CHANGE', data: { ticketId: req.params.id, from: estadoAnterior, to: estado, nota } });
+
     res.json({ message: 'Estado actualizado', ticket: updated });
   } catch (err) {
     console.error('Update status error:', err);

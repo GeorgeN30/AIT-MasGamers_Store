@@ -41,4 +41,24 @@ export const ticketService = {
   uploadMedia(fileUri) {
     return api.upload('/upload', fileUri);
   },
+
+  getMessages(ticketId) {
+    return api.get(`/chat/${ticketId}/messages`);
+  },
+
+  sendMessage(ticketId, message) {
+    return api.post(`/chat/${ticketId}/messages`, { message });
+  },
+
+  getNotifications() {
+    return api.get('/chat/notifications');
+  },
+
+  markNotificationRead(id) {
+    return api.put(`/chat/notifications/${id}/read`, {});
+  },
+
+  markAllNotificationsRead() {
+    return api.put('/chat/notifications/read-all', {});
+  },
 };

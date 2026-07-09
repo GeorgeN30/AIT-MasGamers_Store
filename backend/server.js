@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth.routes');
 const ticketRoutes = require('./routes/tickets.routes');
 const userRoutes = require('./routes/users.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const chatRoutes = require('./routes/chat.routes');
 const { verifyToken } = require('./middleware/auth');
 const { getDb } = require('./db');
 const { seed } = require('./seed');
@@ -41,6 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/chat', chatRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
