@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: ./backend
+    container_name: masgamers-backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - masgamers-data:/app/data
+      - masgamers-uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  masgamers-data:
+  masgamers-uploads:

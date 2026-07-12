@@ -33,6 +33,12 @@ yarn-error.*
 # local env files
 .env*.local
 backend/.env
+backend/data/
+backend/masgamers.db
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/agujeroNegr.jpg
+frontend/.env
 # typescript
 *.tsbuildinfo
 

@@ -19,7 +19,11 @@ const { isImage, compressImage } = require('./services/imageService');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+  : '*';
+app.use(cors(corsOrigins === '*' ? {} : { origin: corsOrigins }));
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   maxAge: '30d',
