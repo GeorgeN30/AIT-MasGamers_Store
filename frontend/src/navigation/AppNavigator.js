@@ -18,11 +18,11 @@ import HomeScreen from '../screens/dashboard/HomeScreen';
 import TicketDetailScreen from '../screens/dashboard/TicketDetailScreen';
 import NewTicketScreen from '../screens/dashboard/NewTicketScreen';
 
-import MediaScreen from '../screens/dashboard/MediaScreen';
 import TimelineScreen from '../screens/dashboard/TimelineScreen';
 import HistoryScreen from '../screens/dashboard/HistoryScreen';
 import ProfileScreen from '../screens/dashboard/ProfileScreen';
 import UserManagementScreen from '../screens/admin/UserManagementScreen';
+import AdminReportScreen from '../screens/dashboard/AdminReportScreen';
 import NotificationPanel from '../components/NotificationPanel';
 
 const Stack = createNativeStackNavigator();
@@ -61,7 +61,6 @@ function BottomTabs({ showNotifications, unreadCount }) {
         tabBarIcon: ({ color, size }) => {
           let iconName;
           if (route.name === 'Inicio') iconName = 'home';
-          else if (route.name === 'Multimedia') iconName = 'camera';
           else if (route.name === 'Seguimiento') iconName = 'time';
           else if (route.name === 'Historial') iconName = 'stats-chart';
           else if (route.name === 'Perfil') iconName = 'person';
@@ -70,7 +69,6 @@ function BottomTabs({ showNotifications, unreadCount }) {
       })}
     >
       <Tab.Screen name="Inicio" component={HomeScreen} />
-      <Tab.Screen name="Multimedia" component={MediaScreen} />
       <Tab.Screen name="Seguimiento" component={TimelineScreen} />
       <Tab.Screen name="Historial" component={HistoryScreen} />
       <Tab.Screen name="Perfil" component={ProfileScreen} />
@@ -145,6 +143,15 @@ function MainStackNavigator({ onBellPress, onNotificationNavigate, notifVisible,
           component={UserManagementScreen}
           options={{
             title: 'Usuarios',
+            headerStyle: { backgroundColor: '#1A202C' },
+            headerTintColor: '#FFFFFF',
+          }}
+        />
+        <Stack.Screen
+          name="AdminReport"
+          component={AdminReportScreen}
+          options={{
+            title: 'Reporte',
             headerStyle: { backgroundColor: '#1A202C' },
             headerTintColor: '#FFFFFF',
           }}

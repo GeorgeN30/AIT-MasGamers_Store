@@ -67,6 +67,9 @@ router.post('/:ticketId/messages', verifyToken, requireActive, (req, res) => {
     if (req.user.role !== 'admin' && ticket.userId !== req.user.id) {
       return res.status(403).json({ message: 'No tienes permiso' });
     }
+    if (ticket.estado === 'Cerrado') {
+      return res.status(400).json({ message: 'No se pueden enviar mensajes a un ticket cerrado' });
+    }
 
     const id = uuidv4();
     prepare(
@@ -145,6 +148,28 @@ router.put('/notifications/read-all', verifyToken, requireActive, (req, res) => 
     res.json({ message: 'OK' });
   } catch (err) {
     console.error('Mark all read error:', err);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
+router.delete('/notifications/all', verifyToken, requireActive, (req, res) => {
+  try {
+    prepare('DELETE FROM notifications WHERE userId = ?')
+      .run([req.user.id]);
+    res.json({ message: 'OK' });
+  } catch (err) {
+    console.error('Delete all notifications error:', err);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
+router.delete('/notifications/:id', verifyToken, requireActive, (req, res) => {
+  try {
+    prepare('DELETE FROM notifications WHERE id = ? AND userId = ?')
+      .run([req.params.id, req.user.id]);
+    res.json({ message: 'OK' });
+  } catch (err) {
+    console.error('Delete notification error:', err);
     res.status(500).json({ message: 'Error del servidor' });
   }
 });

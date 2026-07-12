@@ -1,14 +1,10 @@
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
 import { API_BASE_URL } from '../config';
 
-const CACHE_DIR = `${FileSystem.cacheDirectory}images/`;
+const CACHE_DIR = 'images/';
 
-async function ensureCacheDir() {
-  const dirInfo = await FileSystem.getInfoAsync(CACHE_DIR);
-  if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(CACHE_DIR, { intermediates: true });
-  }
+function getFileSystem() {
+  return require('expo-file-system');
 }
 
 function hashString(str) {
@@ -26,7 +22,9 @@ function getFullUrl(uri) {
   if (uri.startsWith('http')) return uri;
   if (uri.startsWith('/uploads')) {
     const base = API_BASE_URL.replace('/api', '');
-    return `${base}${uri}`;
+    const url = `${base}${uri}`;
+    if (Platform.OS === 'web') return `${url}?t=${Date.now()}`;
+    return url;
   }
   return uri;
 }
@@ -39,12 +37,18 @@ export async function getCachedImage(uri) {
 
   if (Platform.OS === 'web') return fullUrl;
 
+  const FileSystem = getFileSystem();
+  const cacheDir = `${FileSystem.cacheDirectory}${CACHE_DIR}`;
+
   try {
-    await ensureCacheDir();
+    const dirInfo = await FileSystem.getInfoAsync(cacheDir);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
+    }
 
     const hash = hashString(fullUrl);
     const ext = fullUrl.includes('.webp') ? '.webp' : fullUrl.includes('.png') ? '.png' : '.jpg';
-    const cachePath = `${CACHE_DIR}${hash}${ext}`;
+    const cachePath = `${cacheDir}${hash}${ext}`;
 
     const cached = await FileSystem.getInfoAsync(cachePath);
     if (cached.exists) {
@@ -63,10 +67,13 @@ export async function getCachedImage(uri) {
 }
 
 export async function clearCache() {
+  if (Platform.OS === 'web') return;
+  const FileSystem = getFileSystem();
   try {
-    const dirInfo = await FileSystem.getInfoAsync(CACHE_DIR);
+    const cacheDir = `${FileSystem.cacheDirectory}${CACHE_DIR}`;
+    const dirInfo = await FileSystem.getInfoAsync(cacheDir);
     if (dirInfo.exists) {
-      await FileSystem.deleteAsync(CACHE_DIR, { idempotent: true });
+      await FileSystem.deleteAsync(cacheDir, { idempotent: true });
     }
   } catch {}
 }

@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
     }
 
     const ttl = 7 * 24 * 3600;
-    const token = await signJwt(user.id, { email: user.email, role: user.role }, ttl);
+    const token = await signJwt(user.id, { email: user.email, role: user.role, name: user.name }, ttl);
 
     const safeUser = {
       id: user.id,

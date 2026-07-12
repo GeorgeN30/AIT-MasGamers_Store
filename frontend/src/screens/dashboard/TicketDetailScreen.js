@@ -4,7 +4,9 @@ import { Audio } from 'expo-av';
 import { ticketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
 import { getCachedImage } from '../../services/imageCacheService';
+import { API_BASE_URL } from '../../config';
 
+const API_HOST = API_BASE_URL.replace('/api', '');
 const ESTADOS = ['Recibido', 'En diagnostico', 'En reparacion', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
 
 export default function TicketDetailScreen({ route, navigation }) {
@@ -189,12 +191,14 @@ export default function TicketDetailScreen({ route, navigation }) {
   }
 
   const imageFullUrl = cachedImage || (ticket.imageUri?.startsWith('/uploads')
-    ? `http://localhost:3000${ticket.imageUri}`
+    ? `${API_HOST}${ticket.imageUri}`
     : ticket.imageUri);
 
   const audioFullUrl = ticket.audioUri?.startsWith('/uploads')
-    ? `http://localhost:3000${ticket.audioUri}`
+    ? `${API_HOST}${ticket.audioUri}`
     : ticket.audioUri;
+
+  const ticketClosed = ticket.estado === 'Cerrado';
 
   return (
     <ScrollView style={styles.container}>
@@ -381,24 +385,30 @@ export default function TicketDetailScreen({ route, navigation }) {
             );
           })}
         </ScrollView>
-        <View style={styles.chatInputRow}>
-          <TextInput
-            style={styles.chatInput}
-            value={newMessage}
-            onChangeText={setNewMessage}
-            placeholder="Escribe un mensaje..."
-            placeholderTextColor="#A0A0A0"
-            multiline
-            editable={!sendingMessage}
-          />
-          <TouchableOpacity
-            style={[styles.chatSendBtn, (!newMessage.trim() || sendingMessage) && styles.chatSendBtnDisabled]}
-            onPress={handleSendMessage}
-            disabled={!newMessage.trim() || sendingMessage}
-          >
-            <Text style={styles.chatSendText}>{sendingMessage ? '...' : 'Enviar'}</Text>
-          </TouchableOpacity>
-        </View>
+        {ticketClosed ? (
+          <View style={styles.chatClosedBanner}>
+            <Text style={styles.chatClosedText}>Este ticket esta cerrado. No se pueden enviar mensajes.</Text>
+          </View>
+        ) : (
+          <View style={styles.chatInputRow}>
+            <TextInput
+              style={styles.chatInput}
+              value={newMessage}
+              onChangeText={setNewMessage}
+              placeholder="Escribe un mensaje..."
+              placeholderTextColor="#A0A0A0"
+              multiline
+              editable={!sendingMessage}
+            />
+            <TouchableOpacity
+              style={[styles.chatSendBtn, (!newMessage.trim() || sendingMessage) && styles.chatSendBtnDisabled]}
+              onPress={handleSendMessage}
+              disabled={!newMessage.trim() || sendingMessage}
+            >
+              <Text style={styles.chatSendText}>{sendingMessage ? '...' : 'Enviar'}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -503,4 +513,9 @@ const styles = StyleSheet.create({
   },
   chatSendBtnDisabled: { opacity: 0.5 },
   chatSendText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  chatClosedBanner: {
+    borderTopWidth: 1, borderColor: '#E2E8F0', padding: 14, alignItems: 'center',
+    backgroundColor: '#FFF5F5',
+  },
+  chatClosedText: { color: '#E53E3E', fontSize: 13, fontWeight: '600', textAlign: 'center' },
 });

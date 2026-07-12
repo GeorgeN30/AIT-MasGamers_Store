@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Switch, Ale
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
 import { getCachedImage } from '../../services/imageCacheService';
+import { ticketService } from '../../services/ticketService';
 
 export default function ProfileScreen() {
   const { user, updateProfile, changePassword, isLoading } = useAuth();
@@ -12,6 +13,7 @@ export default function ProfileScreen() {
   const [cachedAvatar, setCachedAvatar] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -46,7 +48,17 @@ export default function ProfileScreen() {
     }
     setSaving(true);
     try {
-      await updateProfile(editName.trim(), editAvatar);
+      let avatarUrl = editAvatar;
+      if (editAvatar && !editAvatar.startsWith('/uploads') && !editAvatar.startsWith('http')) {
+        setUploading(true);
+        try {
+          const result = await ticketService.uploadMedia(editAvatar, 'avatar');
+          avatarUrl = result.url;
+        } finally {
+          setUploading(false);
+        }
+      }
+      await updateProfile(editName.trim(), avatarUrl);
       Alert.alert('Exito', 'Perfil actualizado correctamente');
     } catch (e) {
       Alert.alert('Error', e.message);
@@ -188,6 +200,9 @@ export default function ProfileScreen() {
         ) : (
           <Text style={styles.saveButtonText}>Guardar Cambios</Text>
         )}
+        {saving && uploading && (
+          <Text style={styles.uploadingText}>Subiendo imagen...</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -215,4 +230,5 @@ const styles = StyleSheet.create({
   saveButton: { backgroundColor: '#1A202C', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 40 },
   saveButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
   buttonDisabled: { opacity: 0.6 },
+  uploadingText: { color: '#FFFFFF', fontSize: 12, marginTop: 4, opacity: 0.8 },
 });
