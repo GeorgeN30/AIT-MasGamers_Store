@@ -147,7 +147,7 @@ export default function TicketDetailScreen({ route, navigation }) {
   };
 
   const playAudio = async () => {
-    if (!ticket?.audioUri) return;
+    if (!audioFullUrl) return;
     try {
       if (sound) {
         await sound.unloadAsync();
@@ -347,11 +347,11 @@ export default function TicketDetailScreen({ route, navigation }) {
           <View style={styles.logDot} />
           <View style={styles.logContent}>
             <Text style={styles.logText}>
-              {log.estado_anterior ? `${log.estado_anterior} → ${log.estado_nuevo}` : log.estado_nuevo}
+              {log.estado_anterior ? `${log.estado_anterior} -> ${log.estado_nuevo}` : log.estado_nuevo}
             </Text>
             {log.nota ? <Text style={styles.logNota}>{log.nota}</Text> : null}
             <Text style={styles.logMeta}>
-              {log.changedByName} · {log.created_at?.substring(0, 10)}
+              {log.changedByName} - {log.created_at?.substring(0, 10)}
             </Text>
           </View>
         </View>
