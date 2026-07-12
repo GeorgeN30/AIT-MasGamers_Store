@@ -29,7 +29,7 @@ export default function MediaScreen() {
   const uploadImage = async (uri) => {
     setUploading(true);
     try {
-      const result = await ticketService.uploadMedia(uri);
+      const result = await ticketService.uploadMedia(uri, 'evidence');
       Alert.alert('Subida', 'Imagen subida correctamente');
     } catch (e) {
       Alert.alert('Error', e.message);

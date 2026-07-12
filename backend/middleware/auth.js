@@ -1,9 +1,7 @@
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
-
 const { prepare } = require('../db');
+const { verifyJwt } = require('../services/cryptoService');
 
-function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Token no proporcionado' });
@@ -12,10 +10,13 @@ function verifyToken(req, res, next) {
   const token = header.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = await verifyJwt(token);
+    if (!decoded) {
+      return res.status(401).json({ message: 'Token inválido o expirado' });
+    }
     req.user = decoded;
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ message: 'Token inválido o expirado' });
   }
 }

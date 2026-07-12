@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const { prepare } = require('../db');
 const { verifyToken } = require('../middleware/auth');
 const { generateOtp, verifyOtp, resendOtp } = require('../services/notifyService');
+const { signJwt } = require('../services/cryptoService');
 require('dotenv').config();
 
 const router = express.Router();
@@ -64,11 +65,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
     }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+    const ttl = 7 * 24 * 3600;
+    const token = await signJwt(user.id, { email: user.email, role: user.role, name: user.name }, ttl);
 
     const safeUser = {
       id: user.id,

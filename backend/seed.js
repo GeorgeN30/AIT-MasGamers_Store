@@ -39,10 +39,10 @@ async function seed() {
   console.log('  User:  george@gmail.com / george123');
 
   const tickets = [
-    { userId, categoria: 'Soporte Técnico', equipo: 'Teclado Mecánico RGB', descripcion: 'Las teclas WASD no responden después de derrame de líquido', estado: 'En diagnóstico' },
-    { userId, categoria: 'Soporte Técnico', equipo: 'GPU RTX 4060', descripcion: 'La tarjeta gráfica alcanza 90°C en reposo y el ventilador hace ruido extraño', estado: 'En reparación' },
-    { userId, categoria: 'Ventas', equipo: 'Pedido #4521', descripcion: 'Recibí el monitor con un píxel muerto en la esquina superior derecha', estado: 'Recibido' },
-    { userId: adminId, categoria: 'Soporte Técnico', equipo: 'Auriculares HyperX', descripcion: 'El audio se escucha distorsionado en el canal izquierdo', estado: 'Cerrado' },
+    { userId, categoria: 'Soporte Tecnico', equipo: 'Teclado Mecanico RGB', descripcion: 'Las teclas WASD no responden', estado: 'En diagnostico' },
+    { userId, categoria: 'Soporte Tecnico', equipo: 'GPU RTX 4060', descripcion: 'La tarjeta grafica alcanza 90C en reposo', estado: 'En reparacion' },
+    { userId, categoria: 'Ventas', equipo: 'Pedido #4521', descripcion: 'Recibi el monitor con un pixel muerto', estado: 'Recibido' },
+    { userId: adminId, categoria: 'Soporte Tecnico', equipo: 'Auriculares HyperX', descripcion: 'El audio se escucha distorsionado', estado: 'Cerrado' },
   ];
 
   const now = new Date();
@@ -60,27 +60,27 @@ async function seed() {
       'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run([uuidv4(), ticketId, null, 'Recibido', t.userId, null, date.toISOString()]);
 
-    if (t.estado === 'En diagnóstico') {
+    if (t.estado === 'En diagnostico') {
       const d2 = new Date(date);
       d2.setDate(d2.getDate() + 1);
       prepare(
         'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      ).run([uuidv4(), ticketId, 'Recibido', 'En diagnóstico', adminId, null, d2.toISOString()]);
+      ).run([uuidv4(), ticketId, 'Recibido', 'En diagnostico', adminId, null, d2.toISOString()]);
     }
-    if (t.estado === 'En reparación') {
+    if (t.estado === 'En reparacion') {
       const d2 = new Date(date);
       d2.setDate(d2.getDate() + 1);
       prepare(
         'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      ).run([uuidv4(), ticketId, 'Recibido', 'En diagnóstico', adminId, null, d2.toISOString()]);
+      ).run([uuidv4(), ticketId, 'Recibido', 'En diagnostico', adminId, null, d2.toISOString()]);
       const d3 = new Date(date);
       d3.setDate(d3.getDate() + 2);
       prepare(
         'INSERT INTO ticket_logs (id, ticketId, estado_anterior, estado_nuevo, changedBy, nota, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      ).run([uuidv4(), ticketId, 'En diagnóstico', 'En reparación', adminId, null, d3.toISOString()]);
+      ).run([uuidv4(), ticketId, 'En diagnostico', 'En reparacion', adminId, null, d3.toISOString()]);
     }
     if (t.estado === 'Cerrado') {
-      const estados = ['Recibido', 'En diagnóstico', 'En reparación', 'Reparado', 'Enviado al cliente', 'Cerrado'];
+      const estados = ['Recibido', 'En diagnostico', 'En reparacion', 'Reparado', 'Enviado al cliente', 'Cerrado'];
       for (let j = 1; j < estados.length; j++) {
         const d = new Date(date);
         d.setDate(d.getDate() + j);

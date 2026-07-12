@@ -2,6 +2,7 @@ const express = require('express');
 const { prepare } = require('../db');
 const { verifyToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/requireRole');
+const { generateReport } = require('../services/pdfService');
 
 const router = express.Router();
 
@@ -30,6 +31,21 @@ router.get('/stats', verifyToken, requireRole('admin'), (req, res) => {
   } catch (err) {
     console.error('Dashboard stats error:', err);
     res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
+router.get('/report', verifyToken, requireRole('admin'), async (req, res) => {
+  try {
+    const adminName = req.user.name || req.user.email;
+    const pdfBuffer = await generateReport(adminName);
+    const today = new Date().toISOString().split('T')[0];
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="masgamers-report-${today}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('PDF report error:', err);
+    res.status(500).json({ message: 'Error al generar el reporte' });
   }
 });
 

@@ -4,9 +4,11 @@
  * reacciona a isAuthenticated e isInitializing.
  */
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 import { storageService, STORAGE_KEYS } from '../services/storageService';
+import { ticketService } from '../services/ticketService';
+import useWebSocket from '../hooks/useWebSocket';
 
 const AuthContext = createContext(null);
 
@@ -100,6 +102,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const [unreadCount, setUnreadCount] = useState(0);
+  const { connected: wsConnected, lastEvent: wsEvent } = useWebSocket(token, !!user);
+
+  useEffect(() => {
+    if (wsEvent?.type === 'STATUS_CHANGE' || wsEvent?.type === 'NEW_MESSAGE' || wsEvent?.type === 'TICKET_CREATED') {
+      setUnreadCount(prev => prev + 1);
+    }
+  }, [wsEvent]);
+
+  const refreshUnreadCount = useCallback(async () => {
+    try {
+      const data = await ticketService.getNotifications();
+      setUnreadCount(data.unreadCount || 0);
+    } catch {}
+  }, []);
+
   const updateProfile = async (newName, newAvatar) => {
     const result = await authService.updateProfile({ name: newName, avatar: newAvatar });
     const updatedUser = result.user;
@@ -136,6 +154,10 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     isInitializing,
     isAuthenticated: !!user,
+    wsConnected,
+    wsEvent,
+    unreadCount,
+    refreshUnreadCount,
     login,
     register,
     forgotPassword,

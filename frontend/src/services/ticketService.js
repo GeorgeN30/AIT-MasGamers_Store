@@ -38,7 +38,39 @@ export const ticketService = {
     return api.get('/tickets/recent-activity');
   },
 
-  uploadMedia(fileUri) {
-    return api.upload('/upload', fileUri);
+  uploadMedia(fileUri, type = 'evidence') {
+    return api.upload('/upload', fileUri, 'file', { type });
+  },
+
+  getMessages(ticketId) {
+    return api.get(`/chat/${ticketId}/messages`);
+  },
+
+  sendMessage(ticketId, message) {
+    return api.post(`/chat/${ticketId}/messages`, { message });
+  },
+
+  getNotifications() {
+    return api.get('/chat/notifications');
+  },
+
+  markNotificationRead(id) {
+    return api.put(`/chat/notifications/${id}/read`, {});
+  },
+
+  markAllNotificationsRead() {
+    return api.put('/chat/notifications/read-all', {});
+  },
+
+  deleteNotification(id) {
+    return api.request(`/chat/notifications/${id}`, { method: 'DELETE' });
+  },
+
+  deleteAllNotifications() {
+    return api.request('/chat/notifications/all', { method: 'DELETE' });
+  },
+
+  downloadReport() {
+    return `${api.baseUrl}/dashboard/report`;
   },
 };
