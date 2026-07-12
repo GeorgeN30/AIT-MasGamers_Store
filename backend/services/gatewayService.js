@@ -18,6 +18,7 @@ const client = axios.create({
 async function notifyUser(userId, payload) {
   try {
     const response = await client.post('/v1/notify', {
+      app_id: APP_ID,
       user_id: userId,
       payload,
       fallback_push: false,

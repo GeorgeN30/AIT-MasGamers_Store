@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Switch, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
+import { getCachedImage } from '../../services/imageCacheService';
 
 export default function ProfileScreen() {
   const { user, updateProfile, changePassword, isLoading } = useAuth();
 
   const [editName, setEditName] = useState(user?.name || '');
   const [editAvatar, setEditAvatar] = useState(user?.avatar || null);
+  const [cachedAvatar, setCachedAvatar] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -16,6 +18,13 @@ export default function ProfileScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+
+  React.useEffect(() => {
+    if (editAvatar && editAvatar !== user?.avatar) return;
+    if (user?.avatar) {
+      getCachedImage(user.avatar).then(setCachedAvatar);
+    }
+  }, [user?.avatar]);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -79,7 +88,7 @@ export default function ProfileScreen() {
       <View style={styles.headerSection}>
         <TouchableOpacity onPress={pickImage}>
           {editAvatar ? (
-            <Image source={{ uri: editAvatar }} style={styles.avatar} />
+            <Image source={{ uri: editAvatar.startsWith('file://') ? editAvatar : (cachedAvatar || editAvatar) }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarText}>

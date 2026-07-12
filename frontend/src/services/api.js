@@ -67,7 +67,7 @@ class ApiClient {
     return map[ext] || 'image/jpeg';
   }
 
-  async upload(endpoint, fileUri, fieldName = 'file') {
+  async upload(endpoint, fileUri, fieldName = 'file', extraFields = {}) {
     const token = await this.getToken();
     const formData = new FormData();
     const mimeType = this._mimeType(fileUri);
@@ -85,6 +85,10 @@ class ApiClient {
         name: `upload.${ext}`,
       });
     }
+
+    Object.entries(extraFields).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',

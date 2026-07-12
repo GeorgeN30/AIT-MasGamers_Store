@@ -84,7 +84,7 @@ export default function NewTicketScreen({ navigation }) {
       let uploadedImageUri = null;
       if (imageUri) {
         try {
-          const uploadResult = await ticketService.uploadMedia(imageUri);
+          const uploadResult = await ticketService.uploadMedia(imageUri, 'evidence');
           uploadedImageUri = uploadResult.url;
         } catch (uploadError) {
           console.warn('Upload failed, creating ticket without image:', uploadError.message);

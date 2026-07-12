@@ -3,11 +3,19 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, FlatList, ActivityIndi
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { ticketService } from '../../services/ticketService';
+import { getCachedImage } from '../../services/imageCacheService';
 
 export default function HomeScreen({ navigation }) {
   const { user, logout } = useAuth();
   const [recentLogs, setRecentLogs] = useState([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
+  const [cachedAvatar, setCachedAvatar] = useState(null);
+
+  React.useEffect(() => {
+    if (user?.avatar) {
+      getCachedImage(user.avatar).then(setCachedAvatar);
+    }
+  }, [user?.avatar]);
 
   useFocusEffect(
     useCallback(() => {
@@ -29,7 +37,7 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.profileRow}>
         {user?.avatar ? (
-          <Image source={{ uri: user.avatar }} style={styles.avatar} />
+          <Image source={{ uri: cachedAvatar || user.avatar }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarFallback}>
             <Text style={styles.avatarInitial}>
@@ -84,12 +92,20 @@ export default function HomeScreen({ navigation }) {
       )}
 
       {user?.role === 'admin' && (
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => navigation.navigate('UserManagement')}
-        >
-          <Text style={styles.menuText}>Gestionar Usuarios</Text>
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => navigation.navigate('UserManagement')}
+          >
+            <Text style={styles.menuText}>Gestionar Usuarios</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.menuButton, { marginTop: 10 }]}
+            onPress={() => navigation.navigate('AdminReport')}
+          >
+            <Text style={styles.menuText}>Generar Reporte</Text>
+          </TouchableOpacity>
+        </>
       )}
 
       <TouchableOpacity style={styles.logoutButton} onPress={logout}>

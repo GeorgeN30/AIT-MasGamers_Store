@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIn
 import { Audio } from 'expo-av';
 import { ticketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
+import { getCachedImage } from '../../services/imageCacheService';
 
 const ESTADOS = ['Recibido', 'En diagnostico', 'En reparacion', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
 
@@ -27,6 +28,7 @@ export default function TicketDetailScreen({ route, navigation }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [cachedImage, setCachedImage] = useState(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -60,20 +62,10 @@ export default function TicketDetailScreen({ route, navigation }) {
   }, [wsEvent, ticketId]);
 
   useEffect(() => {
-    const poll = setInterval(async () => {
-      try {
-        const data = await ticketService.getMessages(ticketId);
-        const serverMsgs = data.messages || [];
-        setMessages(prev => {
-          if (prev.length >= serverMsgs.length) return prev;
-          const existingIds = new Set(prev.map(m => m.id));
-          const newMsgs = serverMsgs.filter(m => !existingIds.has(m.id));
-          return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev;
-        });
-      } catch {}
-    }, 3000);
-    return () => clearInterval(poll);
-  }, [ticketId]);
+    if (ticket?.imageUri) {
+      getCachedImage(ticket.imageUri).then(setCachedImage);
+    }
+  }, [ticket?.imageUri]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -196,9 +188,9 @@ export default function TicketDetailScreen({ route, navigation }) {
     );
   }
 
-  const imageFullUrl = ticket.imageUri?.startsWith('/uploads')
+  const imageFullUrl = cachedImage || (ticket.imageUri?.startsWith('/uploads')
     ? `http://localhost:3000${ticket.imageUri}`
-    : ticket.imageUri;
+    : ticket.imageUri);
 
   const audioFullUrl = ticket.audioUri?.startsWith('/uploads')
     ? `http://localhost:3000${ticket.audioUri}`
