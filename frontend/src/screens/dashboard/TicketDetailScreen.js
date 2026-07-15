@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Linking, TextInput, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { Audio } from 'expo-av';
 import { ticketService } from '../../services/ticketService';
@@ -59,7 +59,10 @@ export default function TicketDetailScreen({ route, navigation }) {
 
   useEffect(() => {
     if (wsEvent?.type === 'NEW_MESSAGE' && wsEvent?.data?.ticketId === ticketId) {
-      setMessages(prev => [...prev, wsEvent.data]);
+      setMessages(prev => {
+        if (prev.some(m => m.id === wsEvent.data.id)) return prev;
+        return [...prev, wsEvent.data];
+      });
     }
   }, [wsEvent, ticketId]);
 
@@ -201,7 +204,12 @@ export default function TicketDetailScreen({ route, navigation }) {
   const ticketClosed = ticket.estado === 'Cerrado';
 
   return (
-    <ScrollView style={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+    >
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 240 }} keyboardShouldPersistTaps="handled">
       <View style={styles.card}>
         {editMode ? (
           <>
@@ -357,60 +365,69 @@ export default function TicketDetailScreen({ route, navigation }) {
         </View>
       ))}
 
-      <Text style={styles.sectionTitle}>Chat del ticket</Text>
-      <View style={styles.chatContainer}>
-        <ScrollView ref={scrollRef} style={styles.chatMessages} nestedScrollEnabled>
-          {messages.length === 0 && (
-            <Text style={styles.chatEmpty}>Sin mensajes aun. Escribe el primero.</Text>
-          )}
-          {messages.map((msg) => {
-            const isMine = msg.userId === user?.id;
-            return (
-              <View key={msg.id} style={[styles.chatBubble, isMine ? styles.chatBubbleMine : styles.chatBubbleOther]}>
-                <View style={styles.chatBubbleHeader}>
-                  <Text style={[styles.chatBubbleName, isMine && styles.chatBubbleNameMine]}>
-                    {msg.userName}
+      <View style={styles.chatSection}>
+        <Text style={styles.chatSectionTitle}>Chat del ticket</Text>
+        <View style={styles.chatContainer}>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.chatMessages}
+            nestedScrollEnabled
+            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+          >
+            {messages.length === 0 && (
+              <Text style={styles.chatEmpty}>Sin mensajes aun. Escribe el primero.</Text>
+            )}
+            {messages.map((msg) => {
+              const isMine = msg.userId === user?.id;
+              return (
+                <View key={msg.id} style={[styles.chatBubble, isMine ? styles.chatBubbleMine : styles.chatBubbleOther]}>
+                  <View style={styles.chatBubbleHeader}>
+                    <Text style={[styles.chatBubbleName, isMine && styles.chatBubbleNameMine]}>
+                      {msg.userName}
+                    </Text>
+                    {msg.userRole === 'admin' && (
+                      <Text style={styles.chatBadge}>Soporte</Text>
+                    )}
+                  </View>
+                  <Text style={[styles.chatBubbleText, isMine && styles.chatBubbleTextMine]}>
+                    {msg.message}
                   </Text>
-                  {msg.userRole === 'admin' && (
-                    <Text style={styles.chatBadge}>Soporte</Text>
-                  )}
+                  <Text style={[styles.chatBubbleTime, isMine && styles.chatBubbleTimeMine]}>
+                    {msg.created_at?.substring(11, 16)}
+                  </Text>
                 </View>
-                <Text style={[styles.chatBubbleText, isMine && styles.chatBubbleTextMine]}>
-                  {msg.message}
-                </Text>
-                <Text style={[styles.chatBubbleTime, isMine && styles.chatBubbleTimeMine]}>
-                  {msg.created_at?.substring(11, 16)}
-                </Text>
-              </View>
-            );
-          })}
-        </ScrollView>
-        {ticketClosed ? (
-          <View style={styles.chatClosedBanner}>
-            <Text style={styles.chatClosedText}>Este ticket esta cerrado. No se pueden enviar mensajes.</Text>
-          </View>
-        ) : (
-          <View style={styles.chatInputRow}>
-            <TextInput
-              style={styles.chatInput}
-              value={newMessage}
-              onChangeText={setNewMessage}
-              placeholder="Escribe un mensaje..."
-              placeholderTextColor="#A0A0A0"
-              multiline
-              editable={!sendingMessage}
-            />
-            <TouchableOpacity
-              style={[styles.chatSendBtn, (!newMessage.trim() || sendingMessage) && styles.chatSendBtnDisabled]}
-              onPress={handleSendMessage}
-              disabled={!newMessage.trim() || sendingMessage}
-            >
-              <Text style={styles.chatSendText}>{sendingMessage ? '...' : 'Enviar'}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+              );
+            })}
+          </ScrollView>
+          {ticketClosed ? (
+            <View style={styles.chatClosedBanner}>
+              <Text style={styles.chatClosedText}>Este ticket esta cerrado. No se pueden enviar mensajes.</Text>
+            </View>
+          ) : (
+            <View style={styles.chatInputRow}>
+              <TextInput
+                style={styles.chatInput}
+                value={newMessage}
+                onChangeText={setNewMessage}
+                placeholder="Escribe un mensaje..."
+                placeholderTextColor="#A0A0A0"
+                multiline
+                editable={!sendingMessage}
+              />
+              <TouchableOpacity
+                style={[styles.chatSendBtn, (!newMessage.trim() || sendingMessage) && styles.chatSendBtnDisabled]}
+                onPress={handleSendMessage}
+                disabled={!newMessage.trim() || sendingMessage}
+              >
+                <Text style={styles.chatSendText}>{sendingMessage ? '...' : 'Enviar'}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
+
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -481,11 +498,17 @@ const styles = StyleSheet.create({
   modalConfirmText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
   modalCancelBtn: { flex: 1, backgroundColor: '#A0AEC0', padding: 12, borderRadius: 8, alignItems: 'center' },
   modalCancelText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
-  chatContainer: {
-    backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1,
-    borderColor: '#E2E8F0', marginBottom: 24, overflow: 'hidden',
+  chatSection: {
+    borderTopWidth: 1, borderTopColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8,
+    marginTop: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0',
   },
-  chatMessages: { maxHeight: 300, padding: 12 },
+  chatSectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1A202C', marginBottom: 8 },
+  chatContainer: {
+    backgroundColor: '#F7FAFC', borderRadius: 12, borderWidth: 1,
+    borderColor: '#E2E8F0', overflow: 'hidden', maxHeight: 320,
+  },
+  chatMessages: { padding: 12 },
   chatEmpty: { color: '#A0AEC0', fontSize: 14, textAlign: 'center', paddingVertical: 20 },
   chatBubble: { marginBottom: 10, maxWidth: '80%', padding: 10, borderRadius: 10 },
   chatBubbleMine: { backgroundColor: '#1A202C', alignSelf: 'flex-end', borderBottomRightRadius: 2 },

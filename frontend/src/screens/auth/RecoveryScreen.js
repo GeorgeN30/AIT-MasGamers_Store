@@ -26,7 +26,7 @@ export default function RecoveryScreen({ navigation, route }) {
   const [resetToken, setResetToken] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  const { forgotPassword, verifyOtp, resetPassword, resendOtp, isLoading } = useAuth();
+  const { forgotPassword, verifyOtp, resetPassword, resendOtp, logout, isLoading } = useAuth();
   const otpRef = useRef(null);
   const cooldownRef = useRef(null);
 
@@ -107,7 +107,8 @@ export default function RecoveryScreen({ navigation, route }) {
     setError('');
     try {
       await resetPassword(email.trim(), newPassword, resetToken);
-      navigation.navigate('Login', { successMessage: '¡Contraseña actualizada! Ya puedes iniciar sesion.' });
+      await logout();
+      navigation.navigate('Login', { successMessage: 'Contrasena actualizada. Ya puedes iniciar sesion.' });
     } catch (e) {
       setError(e.message);
     }
@@ -121,7 +122,7 @@ export default function RecoveryScreen({ navigation, route }) {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
@@ -183,15 +184,17 @@ export default function RecoveryScreen({ navigation, route }) {
               <Text style={styles.label}>Codigo de verificacion</Text>
               <View style={styles.otpRow}>
                 {Array.from({ length: OTP_LENGTH }).map((_, i) => (
-                  <View
+                  <TouchableOpacity
                     key={i}
                     style={[
                       styles.otpBox,
                       otp.length === i && styles.otpBoxFocused,
                     ]}
+                    onPress={() => otpRef.current?.focus()}
+                    activeOpacity={0.7}
                   >
                     <Text style={styles.otpDigit}>{otp[i] || ''}</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
               <TextInput

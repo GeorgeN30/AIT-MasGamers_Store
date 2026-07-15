@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { ticketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
 
@@ -32,14 +34,17 @@ export default function AdminReportScreen() {
         URL.revokeObjectURL(blobUrl);
         Alert.alert('Descarga completa', 'El reporte PDF se ha descargado');
       } else {
-        const FileSystem = require('expo-file-system');
-        const Sharing = require('expo-sharing');
-        const fileUri = `${FileSystem.documentDirectory}masgamers-report-${new Date().toISOString().split('T')[0]}.pdf`;
-        const downloadResumable = FileSystem.createDownloadResumable(
-          url, fileUri, { headers: { Authorization: `Bearer ${token}` } }
+        const fileName = `masgamers-report-${new Date().toISOString().split('T')[0]}.pdf`;
+        const destination = new File(Paths.document, fileName);
+        const downloadedFile = await File.downloadFileAsync(
+          url,
+          destination,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            idempotent: true,
+          }
         );
-        const { uri } = await downloadResumable.downloadAsync();
-        await Sharing.shareAsync(uri, {
+        await Sharing.shareAsync(downloadedFile.uri, {
           mimeType: 'application/pdf',
           dialogTitle: 'MasGamers Report',
         });

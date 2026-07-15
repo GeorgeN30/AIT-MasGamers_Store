@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { ticketService } from '../../services/ticketService';
 
 const ESTADOS_ORDER = ['Recibido', 'En diagnostico', 'En reparacion', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
@@ -65,7 +66,7 @@ export default function TimelineScreen({ navigation }) {
         </>
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}></Text>
+          <Ionicons name="time-outline" size={48} color="#CBD5E0" />
           <Text style={styles.emptyTitle}>Sin seguimiento</Text>
           <Text style={styles.emptyDesc}>Crea un ticket para ver su progreso</Text>
         </View>
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
   stepText: { fontSize: 15, color: '#A0AEC0', paddingVertical: 10, marginLeft: 4 },
   stepTextActive: { color: '#2D3748', fontWeight: '600' },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#2D3748', marginBottom: 8, marginTop: 12 },
   emptyTitle: { fontSize: 18, fontWeight: '600', color: '#2D3748', marginBottom: 8 },
   emptyDesc: { fontSize: 14, color: '#718096', textAlign: 'center' },
 });

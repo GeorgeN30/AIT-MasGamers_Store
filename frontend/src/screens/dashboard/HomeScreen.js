@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, FlatList, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useAuth } from '../../context/AuthContext';
 import { ticketService } from '../../services/ticketService';
 import { getCachedImage } from '../../services/imageCacheService';
 
 export default function HomeScreen({ navigation }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [recentLogs, setRecentLogs] = useState([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [cachedAvatar, setCachedAvatar] = useState(null);
@@ -85,32 +86,11 @@ export default function HomeScreen({ navigation }) {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>|</Text>
+          <Ionicons name="document-text-outline" size={48} color="#CBD5E0" />
           <Text style={styles.emptyTitle}>Sin actividad reciente</Text>
           <Text style={styles.emptyDesc}>Crea un ticket para empezar</Text>
         </View>
       )}
-
-      {user?.role === 'admin' && (
-        <>
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() => navigation.navigate('UserManagement')}
-          >
-            <Text style={styles.menuText}>Gestionar Usuarios</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.menuButton, { marginTop: 10 }]}
-            onPress={() => navigation.navigate('AdminReport')}
-          >
-            <Text style={styles.menuText}>Generar Reporte</Text>
-          </TouchableOpacity>
-        </>
-      )}
-
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>Cerrar sesion</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -147,11 +127,6 @@ const styles = StyleSheet.create({
   activityText: { fontSize: 14, color: '#2D3748' },
   activityMeta: { fontSize: 12, color: '#A0AEC0', marginTop: 2 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#2D3748', marginBottom: 8 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#2D3748', marginBottom: 8, marginTop: 12 },
   emptyDesc: { fontSize: 14, color: '#718096', textAlign: 'center' },
-  logoutButton: { padding: 14, alignItems: 'center' },
-  logoutText: { color: '#E53E3E', fontWeight: '600', fontSize: 15 },
-  menuButton: { backgroundColor: '#1A202C', padding: 16, borderRadius: 12, marginTop: 15 },
-  menuText: { color: '#FFFFFF', textAlign: 'center', fontWeight: 'bold', fontSize: 16 },
 });

@@ -25,8 +25,24 @@ export default function RegisterScreen({ navigation }) {
       setError('Por favor completa todos los campos');
       return;
     }
+    if (!/\S+@\S+\.\S+/.test(email.trim())) {
+      setError('Ingresa un correo electronico valido');
+      return;
+    }
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError('La contrasena debe tener al menos 6 caracteres');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError('La contrasena debe contener al menos una mayuscula');
+      return;
+    }
+    if (!/\d/.test(password)) {
+      setError('La contrasena debe contener al menos un numero');
+      return;
+    }
+    if (!/[^a-zA-Z0-9]/.test(password)) {
+      setError('La contrasena debe contener al menos un caracter especial (!@#$%&*+? etc)');
       return;
     }
     setError('');
@@ -46,7 +62,7 @@ export default function RegisterScreen({ navigation }) {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>

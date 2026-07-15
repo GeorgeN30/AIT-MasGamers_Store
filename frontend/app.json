@@ -29,10 +29,16 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "RECORD_AUDIO"
-      ]
+      ],
+      "package": "com.georgens.AITMasGamers_Store"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "05007566-bbda-40cf-827a-74a25dcdca53"
+      }
     }
   }
 }

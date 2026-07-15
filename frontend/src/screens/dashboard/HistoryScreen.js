@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { ticketService } from '../../services/ticketService';
 
 const ESTADOS = ['', 'Recibido', 'En diagnostico', 'En reparacion', 'Esperando repuestos', 'Reparado', 'Enviado al cliente', 'Cerrado'];
@@ -45,9 +46,9 @@ export default function HistoryScreen({ navigation }) {
 
   const getMediaIcons = (ticket) => {
     const icons = [];
-    if (ticket.imageUri) icons.push('');
-    if (ticket.audioUri) icons.push('');
-    if (ticket.latitude && ticket.longitude) icons.push('');
+    if (ticket.imageUri) icons.push('camera');
+    if (ticket.audioUri) icons.push('mic');
+    if (ticket.latitude && ticket.longitude) icons.push('location');
     return icons;
   };
 
@@ -139,8 +140,8 @@ export default function HistoryScreen({ navigation }) {
               </View>
               {getMediaIcons(item).length > 0 && (
                 <View style={styles.mediaRow}>
-                  {getMediaIcons(item).map((icon, i) => (
-                    <Text key={i} style={styles.mediaIcon}>{icon}</Text>
+                  {getMediaIcons(item).map((iconName, i) => (
+                    <Ionicons key={i} name={iconName + '-outline'} size={16} color="#A0AEC0" />
                   ))}
                   <Text style={styles.mediaLabel}>Archivos adjuntos</Text>
                 </View>
@@ -151,7 +152,7 @@ export default function HistoryScreen({ navigation }) {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}></Text>
+          <Ionicons name="search-outline" size={48} color="#CBD5E0" />
           <Text style={styles.emptyTitle}>Sin tickets</Text>
           <Text style={styles.emptyDesc}>No se encontraron tickets con esos filtros.</Text>
         </View>
@@ -195,11 +196,10 @@ const styles = StyleSheet.create({
   statusLabel: { fontSize: 14, color: '#718096' },
   badge: { backgroundColor: '#EBF4FF', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12 },
   badgeText: { color: '#3182CE', fontSize: 13, fontWeight: 'bold' },
-  mediaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 4 },
-  mediaIcon: { fontSize: 16 },
+  mediaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 6 },
   mediaLabel: { fontSize: 12, color: '#A0AEC0', marginLeft: 4 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#2D3748', marginBottom: 8, marginTop: 12 },
   emptyTitle: { fontSize: 18, fontWeight: '600', color: '#2D3748', marginBottom: 8 },
   emptyDesc: { fontSize: 14, color: '#718096', textAlign: 'center' },
 });

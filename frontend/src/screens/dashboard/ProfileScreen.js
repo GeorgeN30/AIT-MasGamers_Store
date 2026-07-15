@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Switch, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useAuth } from '../../context/AuthContext';
 import { getCachedImage } from '../../services/imageCacheService';
 import { ticketService } from '../../services/ticketService';
 
-export default function ProfileScreen() {
-  const { user, updateProfile, changePassword, isLoading } = useAuth();
+export default function ProfileScreen({ navigation }) {
+  const { user, updateProfile, changePassword, logout, isLoading } = useAuth();
 
   const [editName, setEditName] = useState(user?.name || '');
   const [editAvatar, setEditAvatar] = useState(user?.avatar || null);
@@ -204,6 +205,33 @@ export default function ProfileScreen() {
           <Text style={styles.uploadingText}>Subiendo imagen...</Text>
         )}
       </TouchableOpacity>
+
+      {user?.role === 'admin' && (
+        <View style={styles.adminSection}>
+          <Text style={styles.sectionTitle}>Panel Admin</Text>
+          <View style={styles.adminRow}>
+            <TouchableOpacity
+              style={styles.adminButton}
+              onPress={() => navigation.navigate('UserManagement')}
+            >
+              <Ionicons name="people-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.adminButtonText}>Usuarios</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.adminButton}
+              onPress={() => navigation.navigate('AdminReport')}
+            >
+              <Ionicons name="document-text-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.adminButtonText}>Reporte PDF</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <Ionicons name="log-out-outline" size={20} color="#E53E3E" />
+        <Text style={styles.logoutText}>Cerrar sesion</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -227,8 +255,20 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A202C', marginBottom: 15 },
   preferenceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
   preferenceText: { fontSize: 16, color: '#1A202C' },
-  saveButton: { backgroundColor: '#1A202C', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 40 },
+  saveButton: { backgroundColor: '#1A202C', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 20 },
   saveButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
   buttonDisabled: { opacity: 0.6 },
   uploadingText: { color: '#FFFFFF', fontSize: 12, marginTop: 4, opacity: 0.8 },
+  adminSection: { marginBottom: 20 },
+  adminRow: { flexDirection: 'row', gap: 12 },
+  adminButton: {
+    flex: 1, backgroundColor: '#1A202C', padding: 14, borderRadius: 8,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+  },
+  adminButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+  logoutButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    padding: 14, marginBottom: 40, gap: 8,
+  },
+  logoutText: { color: '#E53E3E', fontWeight: '600', fontSize: 15 },
 });

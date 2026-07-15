@@ -3,8 +3,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets, SafeAreaProvider } from 'react-native-safe-area-context';
 
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -37,6 +38,7 @@ const AuthStack = () => (
 );
 
 function BottomTabs({ showNotifications, unreadCount }) {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -55,7 +57,7 @@ function BottomTabs({ showNotifications, unreadCount }) {
             )}
           </TouchableOpacity>
         ),
-        tabBarStyle: { backgroundColor: '#FFFFFF', height: 65, paddingBottom: 8 },
+        tabBarStyle: { backgroundColor: '#FFFFFF', height: 65 + insets.bottom, paddingBottom: 8 + insets.bottom },
         tabBarActiveTintColor: '#1A202C',
         tabBarInactiveTintColor: '#718096',
         tabBarIcon: ({ color, size }) => {
@@ -90,6 +92,7 @@ export default function AppNavigator() {
   if (isInitializing) return <SplashScreen />;
 
   return (
+    <SafeAreaProvider>
     <NavigationContainer ref={navigationRef}>
       {isAuthenticated ? (
         <MainStackNavigator
@@ -105,6 +108,7 @@ export default function AppNavigator() {
         <AuthStack />
       )}
     </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 

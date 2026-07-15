@@ -1,86 +1,215 @@
 const PDFDocument = require('pdfkit');
 const { prepare } = require('../db');
 
-const COL_WIDTHS = [60, 120, 110, 90, 90];
+const COL_WIDTHS = [60, 120, 110, 90, 92];
 const HEADERS = ['ID', 'Equipo', 'Cliente', 'Categoria', 'Estado'];
 const TABLE_LEFT = 50;
-const ROW_HEIGHT = 18;
-const HEADER_HEIGHT = 20;
+const ROW_HEIGHT = 20;
+const HEADER_HEIGHT = 22;
+const PAGE_BOTTOM_MARGIN = 60;
 
-function drawTable(doc, data, tableTop) {
+const COLORS = {
+  headerBg: '#2C3E50',
+  headerText: '#FFFFFF',
+  rowAlt: '#F5F6F8',
+  border: '#D0D3D8',
+  text: '#1C1C1C',
+  accent: '#2C3E50',
+  muted: '#6B7280',
+};
+
+function pageBottomLimit(doc) {
+  return doc.page.height - doc.page.margins.bottom - PAGE_BOTTOM_MARGIN;
+}
+
+function drawTableHeader(doc, tableTop) {
   const totalWidth = COL_WIDTHS.reduce((a, b) => a + b, 0);
-  const headerBottom = tableTop + HEADER_HEIGHT;
 
-  doc.lineWidth(0.5).strokeColor('#333333');
+  doc.save();
+  doc.rect(TABLE_LEFT, tableTop, totalWidth, HEADER_HEIGHT).fill(COLORS.headerBg);
+  doc.restore();
 
   let x = TABLE_LEFT;
-  doc.fontSize(9).font('Helvetica-Bold');
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(COLORS.headerText);
   HEADERS.forEach((h, i) => {
-    doc.text(h, x + 4, tableTop + 5, { width: COL_WIDTHS[i] - 8 });
-    if (i > 0) {
-      doc.moveTo(x, tableTop).lineTo(x, tableTop + ROW_HEIGHT * Math.min(data.length, 1) + HEADER_HEIGHT).stroke();
-    }
+    doc.text(h, x + 6, tableTop + 6, { width: COL_WIDTHS[i] - 10 });
     x += COL_WIDTHS[i];
   });
 
-  doc.moveTo(TABLE_LEFT, headerBottom).lineTo(TABLE_LEFT + totalWidth, headerBottom).stroke();
+  return tableTop + HEADER_HEIGHT;
+}
 
-  doc.font('Helvetica').fontSize(8);
-  data.forEach((row, idx) => {
-    const y = headerBottom + idx * ROW_HEIGHT;
-    if (y + ROW_HEIGHT > 720) {
+function drawGridLines(doc, top, bottom) {
+  const totalWidth = COL_WIDTHS.reduce((a, b) => a + b, 0);
+  doc.lineWidth(0.5).strokeColor(COLORS.border);
+
+  let x = TABLE_LEFT;
+  doc.moveTo(x, top).lineTo(x, bottom).stroke();
+  COL_WIDTHS.forEach((w) => {
+    x += w;
+    doc.moveTo(x, top).lineTo(x, bottom).stroke();
+  });
+
+  doc.moveTo(TABLE_LEFT, top).lineTo(TABLE_LEFT + totalWidth, top).stroke();
+  doc.moveTo(TABLE_LEFT, bottom).lineTo(TABLE_LEFT + totalWidth, bottom).stroke();
+}
+
+function drawTable(doc, data, tableTop) {
+  const totalWidth = COL_WIDTHS.reduce((a, b) => a + b, 0);
+  let y = drawTableHeader(doc, tableTop);
+  let sectionTop = tableTop;
+
+  for (let idx = 0; idx < data.length; idx++) {
+    const row = data[idx];
+
+    if (y + ROW_HEIGHT > pageBottomLimit(doc)) {
+      drawGridLines(doc, sectionTop, y);
       doc.addPage();
-      return drawTable(doc, data.slice(idx), 50);
+      sectionTop = doc.page.margins.top;
+      y = drawTableHeader(doc, sectionTop);
     }
 
     if (idx % 2 === 0) {
-      doc.save().rect(TABLE_LEFT, y, totalWidth, ROW_HEIGHT).fill('#F5F5F5').restore();
-      doc.fontSize(8).font('Helvetica');
+      doc.save().rect(TABLE_LEFT, y, totalWidth, ROW_HEIGHT).fill(COLORS.rowAlt).restore();
     }
 
-    doc.fillColor('#000000');
+    doc.fontSize(8).font('Helvetica').fillColor(COLORS.text);
     const vals = [
-      (row.id || '').substring(0, 8),
+      (row.id || '').toString().substring(0, 8),
       row.equipo || '',
       row.clientName || '',
       row.categoria || '',
       row.estado || '',
     ];
+
     let cx = TABLE_LEFT;
     vals.forEach((v, i) => {
-      doc.text(v, cx + 4, y + 3, { width: COL_WIDTHS[i] - 8, ellipsis: true });
+      doc.text(v, cx + 6, y + 5, { width: COL_WIDTHS[i] - 10, ellipsis: true });
       cx += COL_WIDTHS[i];
     });
 
+    doc.lineWidth(0.5).strokeColor(COLORS.border);
     doc.moveTo(TABLE_LEFT, y + ROW_HEIGHT).lineTo(TABLE_LEFT + totalWidth, y + ROW_HEIGHT).stroke();
-  });
 
-  const totalWidth2 = COL_WIDTHS.reduce((a, b) => a + b, 0);
-  x = TABLE_LEFT;
-  doc.moveTo(TABLE_LEFT, tableTop).lineTo(TABLE_LEFT + totalWidth2, tableTop).stroke();
+    y += ROW_HEIGHT;
+  }
 
-  return tableTop + HEADER_HEIGHT + data.length * ROW_HEIGHT;
+  drawGridLines(doc, sectionTop, y);
+  doc.y = y;
+  return y;
 }
 
-function drawGridSection(doc, title, data, adminName) {
-  doc.fontSize(14).font('Helvetica-Bold').fillColor('#000000').text(title);
-  doc.moveDown(0.3);
+function drawGridSection(doc, title, data) {
+  if (doc.y + 60 > pageBottomLimit(doc)) {
+    doc.addPage();
+  }
+
+  doc.fontSize(13).font('Helvetica-Bold').fillColor(COLORS.accent).text(title);
+  doc.moveDown(0.2);
+  doc
+    .moveTo(TABLE_LEFT, doc.y)
+    .lineTo(TABLE_LEFT + 60, doc.y)
+    .lineWidth(2)
+    .strokeColor(COLORS.accent)
+    .stroke();
+  doc.moveDown(0.5);
 
   if (data.length === 0) {
-    doc.fontSize(10).font('Helvetica').text(`No hay ${title.toLowerCase()}.`);
-    doc.moveDown(1);
+    doc.fontSize(9).font('Helvetica-Oblique').fillColor(COLORS.muted).text('No hay ' + title.toLowerCase() + '.');
+    doc.moveDown(1.2);
     return;
   }
 
   drawTable(doc, data, doc.y);
-  doc.moveDown(1.5);
+  doc.moveDown(1.4);
+}
+
+function drawSummaryCards(doc, stats) {
+  const cardWidth = 150;
+  const gap = 16;
+  const top = doc.y;
+  const cards = [
+    { label: 'Total del mes', value: stats.total || 0 },
+    { label: 'Resueltos', value: stats.resolved || 0 },
+    { label: 'Pendientes', value: stats.pending || 0 },
+  ];
+
+  cards.forEach((card, i) => {
+    const x = TABLE_LEFT + i * (cardWidth + gap);
+    doc.save();
+    doc.roundedRect(x, top, cardWidth, 60, 4).fillAndStroke('#F5F6F8', COLORS.border);
+    doc.restore();
+    doc.fontSize(20).font('Helvetica-Bold').fillColor(COLORS.accent).text(String(card.value), x + 12, top + 10);
+    doc.fontSize(9).font('Helvetica').fillColor(COLORS.muted).text(card.label, x + 12, top + 38);
+  });
+
+  doc.y = top + 60;
+  doc.moveDown(1.2);
+}
+
+function drawBreakdownTable(doc, title, rows, keyLabel) {
+  if (doc.y + 60 > pageBottomLimit(doc)) doc.addPage();
+
+  doc.fontSize(12).font('Helvetica-Bold').fillColor(COLORS.accent).text(title);
+  doc.moveDown(0.4);
+
+  if (!rows.length) {
+    doc.fontSize(9).font('Helvetica-Oblique').fillColor(COLORS.muted).text('Sin datos para este periodo.');
+    doc.moveDown(1);
+    return;
+  }
+
+  const colA = 220;
+  const colB = 100;
+  let y = doc.y;
+
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(COLORS.text);
+  doc.text(keyLabel, TABLE_LEFT + 6, y + 4, { width: colA - 10 });
+  doc.text('Cantidad', TABLE_LEFT + colA + 6, y + 4, { width: colB - 10 });
+  doc.save().rect(TABLE_LEFT, y, colA + colB, 20).fillOpacity(0).stroke(COLORS.border).restore();
+  y += 20;
+
+  doc.font('Helvetica').fontSize(9);
+  rows.forEach((r, i) => {
+    if (i % 2 === 0) {
+      doc.save().rect(TABLE_LEFT, y, colA + colB, 18).fill(COLORS.rowAlt).restore();
+    }
+    doc.fillColor(COLORS.text);
+    doc.text(r.categoria || r.estado || '-', TABLE_LEFT + 6, y + 4, { width: colA - 10 });
+    doc.text(String(r.count), TABLE_LEFT + colA + 6, y + 4, { width: colB - 10 });
+    doc
+      .lineWidth(0.5)
+      .strokeColor(COLORS.border)
+      .moveTo(TABLE_LEFT, y + 18)
+      .lineTo(TABLE_LEFT + colA + colB, y + 18)
+      .stroke();
+    y += 18;
+  });
+
+  doc.y = y;
+  doc.moveDown(1.2);
+}
+
+function drawFooter(doc) {
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i < range.start + range.count; i++) {
+    doc.switchToPage(i);
+    const bottom = doc.page.height - doc.page.margins.bottom + 15;
+    doc
+      .fontSize(8)
+      .font('Helvetica')
+      .fillColor(COLORS.muted)
+      .text('Pagina ' + (i + 1) + ' de ' + range.count, TABLE_LEFT, bottom, {
+        width: doc.page.width - TABLE_LEFT * 2,
+        align: 'center',
+      });
+  }
 }
 
 function generateReport(adminName) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ margin: 50, bufferPages: true });
     const chunks = [];
-
     doc.on('data', (chunk) => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
@@ -123,46 +252,30 @@ function generateReport(adminName) {
        GROUP BY estado ORDER BY count DESC`
     ).all([monthStart]);
 
-    doc.fontSize(20).font('Helvetica-Bold').text('MasGamers', { align: 'center' });
-    doc.fontSize(14).font('Helvetica').text('Reporte de Tickets', { align: 'center' });
-    doc.moveDown(0.5);
-    doc.fontSize(10).text(`Fecha: ${today}  |  Generado por: ${adminName}`, { align: 'center' });
+    doc.fontSize(20).font('Helvetica-Bold').fillColor(COLORS.accent).text('MasGamers', { align: 'center' });
+    doc.fontSize(13).font('Helvetica').fillColor(COLORS.text).text('Reporte de Tickets', { align: 'center' });
+    doc.moveDown(0.4);
+    doc
+      .fontSize(9)
+      .fillColor(COLORS.muted)
+      .text('Fecha: ' + today + '   |   Generado por: ' + adminName, { align: 'center' });
     doc.moveDown(1);
 
-    drawGridSection(doc, 'Resueltos Hoy', resolvedToday, adminName);
+    doc.fontSize(13).font('Helvetica-Bold').fillColor(COLORS.accent).text('Resumen del mes');
+    doc.moveDown(0.4);
+    drawSummaryCards(doc, monthlyStats || {});
 
-    drawGridSection(doc, 'Tickets Pendientes', pending, adminName);
+    drawBreakdownTable(doc, 'Tickets por categoria', byCategory, 'Categoria');
+    drawBreakdownTable(doc, 'Tickets por estado', byStatus, 'Estado');
 
-    doc.addPage();
-    doc.fontSize(14).font('Helvetica-Bold').fillColor('#000000').text('Resumen Mensual');
-    doc.moveDown(0.5);
+    if (doc.y + 120 > pageBottomLimit(doc)) {
+      doc.addPage();
+    }
 
-    doc.fontSize(11).font('Helvetica').text(`Periodo: ${monthStart} al ${today}`);
-    doc.moveDown(0.3);
-    doc.text(`Total de tickets: ${monthlyStats.total}`);
-    doc.text(`Resueltos: ${monthlyStats.resolved}`);
-    doc.text(`Pendientes: ${monthlyStats.pending}`);
-    doc.moveDown(0.8);
+    drawGridSection(doc, 'Resueltos Hoy', resolvedToday);
+    drawGridSection(doc, 'Tickets Pendientes', pending);
 
-    doc.fontSize(12).font('Helvetica-Bold').text('Por Categoria');
-    doc.moveDown(0.3);
-    doc.fontSize(10).font('Helvetica');
-    byCategory.forEach((row) => {
-      doc.text(`  ${row.categoria}: ${row.count}`);
-    });
-
-    doc.moveDown(0.8);
-    doc.fontSize(12).font('Helvetica-Bold').text('Por Estado');
-    doc.moveDown(0.3);
-    doc.fontSize(10).font('Helvetica');
-    byStatus.forEach((row) => {
-      doc.text(`  ${row.estado}: ${row.count}`);
-    });
-
-    doc.moveDown(2);
-    doc.fontSize(8).font('Helvetica').fillColor('#999999')
-      .text('Este reporte fue generado automaticamente por MasGamers.', { align: 'center' });
-
+    drawFooter(doc);
     doc.end();
   });
 }
